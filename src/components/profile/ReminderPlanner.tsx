@@ -4,6 +4,7 @@ import { Button, buttonVariants } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { buildReminderIcs, DAY_INITIALS, DAY_NAMES, describePlan, googleCalendarUrl } from '@/lib/calendar'
 import { notificationPermission, requestNotificationPermission } from '@/lib/notify'
+import { PushToggle } from './PushToggle'
 import { shareOrDownloadFile } from '@/lib/share'
 import { cn } from '@/lib/utils'
 
@@ -65,10 +66,17 @@ export function ReminderPlanner({ days, time, onChange }: ReminderPlannerProps) 
         />
       </label>
 
-      <div className="rounded-lg bg-secondary/60 p-3">
-        <p className="text-sm">
-          Te avisará <strong>tu calendario</strong> ({hasDays ? describePlan(plan) : 'elige al menos un día'}), aunque la
-          app esté cerrada.
+      <PushToggle plan={plan} />
+
+      <details className="group rounded-lg bg-secondary/60 p-3">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-2 text-sm font-semibold select-none">
+          También en tu calendario
+          <span className="text-muted-foreground transition-transform group-open:rotate-180" aria-hidden>
+            ▾
+          </span>
+        </summary>
+        <p className="mt-2 text-sm">
+          Crea un evento semanal ({hasDays ? describePlan(plan) : 'elige al menos un día'}) con alarma en tu calendario.
         </p>
         <div className="mt-3 grid gap-2">
           <a
@@ -77,7 +85,7 @@ export function ReminderPlanner({ days, time, onChange }: ReminderPlannerProps) 
             rel="noopener noreferrer"
             aria-disabled={!hasDays}
             onClick={() => hasDays && setCalendarDone('Guarda el evento en Google Calendar para activar el aviso.')}
-            className={cn(buttonVariants({ variant: 'default' }), !hasDays && 'pointer-events-none opacity-50')}
+            className={cn(buttonVariants({ variant: 'secondary' }), !hasDays && 'pointer-events-none opacity-50')}
           >
             <CalendarPlus /> Google Calendar
           </a>
@@ -86,7 +94,7 @@ export function ReminderPlanner({ days, time, onChange }: ReminderPlannerProps) 
           </Button>
         </div>
         {calendarDone && <p className="mt-2 text-xs text-muted-foreground">{calendarDone}</p>}
-      </div>
+      </details>
 
       {permission !== 'unsupported' && (
         <div className="flex items-center justify-between gap-3">

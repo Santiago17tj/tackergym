@@ -90,9 +90,38 @@ Instalar: **iPhone** → Safari → Compartir → "Añadir a pantalla de inicio"
 - Series: se apuntan tocando la serie (panel con −/+ de 2,5 kg / 5 lb y 1 rep, o escribiendo) y se
   marcan con un botón grande.
 
-> ¿Recordatorios por WhatsApp? Enviar mensajes automáticos exige un servidor y la API de WhatsApp
-> Business (de pago y con aprobación de Meta), lo que rompería el diseño local y sin nube. El
-> calendario del teléfono cumple la misma función sin coste ni datos fuera del dispositivo.
+> ¿Recordatorios por WhatsApp? Enviar mensajes automáticos exige la API de WhatsApp Business (de pago
+> y con aprobación de Meta). En su lugar hay avisos push propios (ver abajo) y, como alternativa sin
+> servidor, el evento en el calendario del teléfono.
+
+## Avisos "hoy toca entrenar" (Web Push)
+
+Notificación a la hora elegida los días de entreno, **aunque la app esté cerrada** (Android, escritorio y
+iPhone/iPad 16.4+ con la app instalada en la pantalla de inicio).
+
+**Privacidad:** el servidor (funciones en `api/`) solo guarda la suscripción del navegador, los días, la
+hora y la zona horaria. El aviso llega vacío y el service worker (`public/sw-notifications.js`) escribe
+el texto en el teléfono con los datos locales: «Alex, hoy toca entrenar — Siguiente rutina: Torso A»,
+«tienes un entreno a medias» o «hoy ya entrenaste». Nombre y entrenamientos nunca salen del dispositivo.
+
+### Configuración en Vercel (una vez)
+
+1. **Upstash Redis:** Vercel → proyecto → *Storage* → *Create Database* → **Upstash for Redis** (plan
+   gratuito) → conéctalo al proyecto. Crea `KV_REST_API_URL` y `KV_REST_API_TOKEN`.
+2. **Reloj cada 5 minutos**, una de dos:
+   - **Upstash QStash** (recomendado): Vercel → *Integrations/Marketplace* → **Upstash** → QStash →
+     conéctalo al proyecto (crea `QSTASH_TOKEN`, `QSTASH_CURRENT_SIGNING_KEY`, `QSTASH_NEXT_SIGNING_KEY`).
+     El reloj se crea solo con la primera suscripción.
+   - **Otro cron** (p. ej. cron-job.org): añade la variable `CRON_SECRET` con un texto aleatorio y
+     programa cada 5 min un `POST https://TU-DOMINIO/api/push/tick` con la cabecera
+     `Authorization: Bearer <CRON_SECRET>`.
+3. Vuelve a desplegar (las variables se aplican en el siguiente despliegue).
+4. En la app: *Ajustes → Recordatorios → Activar aviso*.
+
+Las claves VAPID se generan solas la primera vez y se guardan en Redis. Opcional: `VAPID_SUBJECT`
+(`mailto:tu@correo`). Endpoints: `GET /api/push/key`, `POST|DELETE /api/push/subscribe`,
+`POST /api/push/tick` (firmado por QStash o con `CRON_SECRET`). Las suscripciones anuladas por el
+navegador (404/410) se borran automáticamente.
 
 ## Personalización
 
@@ -118,7 +147,8 @@ Instalar: **iPhone** → Safari → Compartir → "Añadir a pantalla de inicio"
 - CSP estricta sin `unsafe-inline` (`script-src 'self'`, `style-src 'self'`, `connect-src 'self'`,
   `frame-ancestors 'none'`), `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`,
   `Permissions-Policy` y `COOP`, definidas en `vercel.json`.
-- Sin backend, sin analítica ni peticiones a terceros: nada sale del dispositivo.
+- Sin analítica ni peticiones a terceros. Los entrenamientos nunca salen del dispositivo; el único
+  servidor (opcional, avisos push) guarda solo suscripción, días, hora y zona horaria.
 - Los backups importados se validan campo a campo, se sanean (se descartan claves desconocidas),
   tienen un límite de 50 MB y se restauran en una única transacción.
 - Nota: la barra de comentarios de Vercel en los *preview deployments* queda bloqueada por la CSP;

@@ -49,7 +49,7 @@ export function RemindersCard({ settings }: { settings: AppSettings }) {
     <Card>
       <CardHeader>
         <CardTitle>Recordatorios</CardTitle>
-        <CardDescription>Tu calendario te avisa los días de entreno, aunque la app esté cerrada.</CardDescription>
+        <CardDescription>Te avisamos los días de entreno, aunque la app esté cerrada.</CardDescription>
       </CardHeader>
       <CardContent>
         <ReminderPlanner

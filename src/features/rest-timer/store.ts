@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react'
+import { unlockAudio } from '@/lib/alerts'
 
 export type RestTimerState = {
   startedAt: number
@@ -52,7 +53,9 @@ export const restTimer = {
     listeners.add(listener)
     return () => listeners.delete(listener)
   },
+  /** Llamar desde un gesto del usuario: así iOS permite que suene el aviso final. */
   start(seconds: number, label: string | null = null) {
+    unlockAudio()
     const now = Date.now()
     set({ startedAt: now, endsAt: now + seconds * 1000, durationMs: seconds * 1000, label })
   },

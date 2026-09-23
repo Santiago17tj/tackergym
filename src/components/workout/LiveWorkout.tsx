@@ -9,7 +9,6 @@ import { addExerciseToWorkout, discardWorkout, finishWorkout, WorkoutError, type
 import { restTimer } from '@/features/rest-timer/store'
 import { useLastPerformances, type ActiveWorkout } from '@/hooks/useDb'
 import { useNow } from '@/hooks/useNow'
-import { useWakeLock } from '@/hooks/useWakeLock'
 import { formatClock } from '@/lib/format'
 import { ExerciseBlock } from './ExerciseBlock'
 import { ExercisePicker } from './ExercisePicker'
@@ -28,8 +27,6 @@ export function LiveWorkout({ workout, settings }: LiveWorkoutProps) {
   const [discardOpen, setDiscardOpen] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
-
-  useWakeLock(true)
 
   const exerciseIds = useMemo(() => blocks.map((b) => b.block.exerciseId), [blocks])
   const lastPerformances = useLastPerformances(exerciseIds, session.id)

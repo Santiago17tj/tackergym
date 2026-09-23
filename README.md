@@ -74,6 +74,28 @@ npm run generate-pwa-assets  # regenera los iconos PNG desde public/logo.svg
 
 Instalar: **iPhone** → Safari → Compartir → "Añadir a pantalla de inicio". **Android** → Chrome → ⋮ → "Instalar app".
 
+## Compatibilidad y avisos
+
+- **Requisitos**: iOS/iPadOS 16.4+ (Safari), Chrome/Edge/Samsung Internet recientes en Android.
+- **iPhone: instala la app antes de empezar a usarla.** En iOS, Safari y la app instalada guardan los
+  datos por separado; lo registrado en una pestaña de Safari no aparece en la app de la pantalla de inicio
+  (y viceversa). Si ya tienes datos en Safari, expórtalos desde Ajustes e impórtalos en la app instalada.
+- Safari puede borrar los datos de webs **no instaladas** tras 7 días sin uso; la app instalada está exenta.
+- Con el teléfono bloqueado, iOS congela la web: el pitido del descanso no suena, por eso la app mantiene
+  la pantalla encendida durante el entrenamiento. El tiempo siempre es correcto al volver.
+- La vibración no está disponible en iOS (limitación de Safari).
+
+## Seguridad
+
+- CSP estricta sin `unsafe-inline` (`script-src 'self'`, `style-src 'self'`, `connect-src 'self'`,
+  `frame-ancestors 'none'`), `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`,
+  `Permissions-Policy` y `COOP`, definidas en `vercel.json`.
+- Sin backend, sin analítica ni peticiones a terceros: nada sale del dispositivo.
+- Los backups importados se validan campo a campo, se sanean (se descartan claves desconocidas),
+  tienen un límite de 50 MB y se restauran en una única transacción.
+- Nota: la barra de comentarios de Vercel en los *preview deployments* queda bloqueada por la CSP;
+  no afecta a producción.
+
 ## Despliegue en Vercel
 
 1. En [vercel.com/new](https://vercel.com/new) importa este repositorio (Vercel detecta Vite).

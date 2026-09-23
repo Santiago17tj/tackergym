@@ -110,3 +110,16 @@ describe('backup / restore', () => {
     expect((await createBackup()).format).toBe(BACKUP_FORMAT)
   })
 })
+
+describe('saneado del backup', () => {
+  it('descarta campos desconocidos al importar', async () => {
+    const backup = JSON.parse(JSON.stringify(await createBackup()))
+    backup.data.exercises[0].malicious = '<img src=x onerror=alert(1)>'
+    backup.data.routines[0].exercises[0].extra = 1
+    backup.data.settings = [{ key: 'weightUnit', value: 'lb', junk: true }]
+    const parsed = parseBackup(backup)
+    expect(parsed.data.exercises[0]).not.toHaveProperty('malicious')
+    expect(parsed.data.routines[0].exercises[0]).not.toHaveProperty('extra')
+    expect(parsed.data.settings[0]).toEqual({ key: 'weightUnit', value: 'lb' })
+  })
+})

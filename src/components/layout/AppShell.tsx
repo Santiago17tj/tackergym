@@ -4,6 +4,7 @@ import { UpdatePrompt } from '@/components/pwa/UpdatePrompt'
 import { RestTimerBar } from '@/features/rest-timer/RestTimerBar'
 import { useRestTimer } from '@/features/rest-timer/store'
 import { useHasActiveWorkout } from '@/hooks/useDb'
+import { useWakeLock } from '@/hooks/useWakeLock'
 import { cn } from '@/lib/utils'
 
 const NAV_ITEMS = [
@@ -20,6 +21,8 @@ const NAV_ITEMS = [
 export function AppShell() {
   const hasActiveWorkout = useHasActiveWorkout()
   const restActive = useRestTimer() !== null
+  // Pantalla encendida durante todo el entrenamiento, aunque se cambie de pestaña.
+  useWakeLock(hasActiveWorkout)
 
   return (
     <div className="flex min-h-dvh flex-col px-safe">

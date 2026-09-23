@@ -1,16 +1,19 @@
-import { Download, Loader2, Upload } from 'lucide-react'
+import { Download, Loader2, Share, Upload } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { ConfirmDialog } from '@/components/ui/dialog'
 import {
   BackupError,
+  deliverBackupFile,
   exportBackup,
   readBackupFile,
   restoreBackup,
   summarizeBackup,
   type BackupFile,
+  type ExportResult,
 } from '@/db/backup'
+import { restTimer } from '@/features/rest-timer/store'
 import { cn } from '@/lib/utils'
 
 type Status = { kind: 'success' | 'error'; message: string } | null
@@ -22,13 +25,22 @@ export function BackupCard() {
   const [busy, setBusy] = useState(false)
   const [status, setStatus] = useState<Status>(null)
   const [pending, setPending] = useState<BackupFile | null>(null)
+  const [readyFile, setReadyFile] = useState<File | null>(null)
+
+  function handleResult(result: ExportResult) {
+    if (result.status === 'needs-tap') {
+      setReadyFile(result.file)
+      return
+    }
+    setReadyFile(null)
+    if (result.status !== 'cancelled') setStatus({ kind: 'success', message: 'Copia de seguridad creada.' })
+  }
 
   async function handleExport() {
     setBusy(true)
     setStatus(null)
     try {
-      const result = await exportBackup()
-      if (result !== 'cancelled') setStatus({ kind: 'success', message: 'Copia de seguridad creada.' })
+      handleResult(await exportBackup())
     } catch (error) {
       console.error(error)
       setStatus({ kind: 'error', message: 'No se pudo crear la copia de seguridad.' })
@@ -56,6 +68,7 @@ export function BackupCard() {
     setBusy(true)
     try {
       await restoreBackup(pending)
+      restTimer.stop()
       setStatus({ kind: 'success', message: 'Datos restaurados correctamente.' })
     } catch (error) {
       console.error(error)
@@ -82,6 +95,11 @@ export function BackupCard() {
         <Button onClick={handleExport} disabled={busy}>
           {busy && !pending ? <Loader2 className="animate-spin" /> : <Download />} Exportar datos
         </Button>
+        {readyFile && (
+          <Button variant="outline" onClick={() => deliverBackupFile(readyFile).then(handleResult)}>
+            <Share /> Toca para guardar la copia
+          </Button>
+        )}
         <Button variant="secondary" onClick={() => fileInput.current?.click()} disabled={busy}>
           <Upload /> Restaurar desde archivo
         </Button>

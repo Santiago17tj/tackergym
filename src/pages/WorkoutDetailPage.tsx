@@ -92,8 +92,9 @@ export function WorkoutDetailPage() {
         onCancel={() => setConfirmDelete(false)}
         onConfirm={async () => {
           setConfirmDelete(false)
-          await deleteWorkout(detail.session.id)
+          const sessionId = detail.session.id
           navigate('/historial', { replace: true })
+          await deleteWorkout(sessionId)
         }}
       >
         Se eliminarán sus {detail.completedSets} series y dejarán de contar para tus récords. No se puede deshacer.

@@ -21,6 +21,18 @@ type SetRowProps = {
 const weightToText = (kg: number | null, unit: WeightUnit) => (kg === null ? '' : String(toDisplayWeight(kg, unit)))
 const repsToText = (reps: number | null) => (reps === null ? '' : String(reps))
 
+/**
+ * Al salir del campo muestra lo que el usuario escribió ya normalizado
+ * ("82," → "82", "7.6" reps → "8"), sin esperar a que IndexedDB responda.
+ * Si no es un número válido, vuelve al valor guardado.
+ */
+function normalizeOnBlur(text: string, stored: string, integer = false): string {
+  if (text.trim() === '') return ''
+  const value = parseDecimal(text)
+  if (value === null) return stored
+  return String(integer ? Math.round(value) : Math.round(value * 100) / 100)
+}
+
 export const SetRow = memo(function SetRow({ set, previous, unit, repsPlaceholder, onCompleted }: SetRowProps) {
   const weightRef = useRef<HTMLInputElement>(null)
   const repsRef = useRef<HTMLInputElement>(null)
@@ -103,7 +115,7 @@ export const SetRow = memo(function SetRow({ set, previous, unit, repsPlaceholde
         value={weightText}
         onChange={(e) => onWeightChange(e.target.value)}
         onFocus={(e) => e.currentTarget.select()}
-        onBlur={() => setWeightText(weightToText(set.weightKg, unit))}
+        onBlur={() => setWeightText(normalizeOnBlur(weightText, weightToText(set.weightKg, unit)))}
         placeholder={previous?.weightKg != null ? String(toDisplayWeight(previous.weightKg, unit)) : unit}
         aria-label={`Peso serie ${set.setNumber} (${unit})`}
         className={cn('h-12 px-1', done && 'border-success/40')}
@@ -114,7 +126,7 @@ export const SetRow = memo(function SetRow({ set, previous, unit, repsPlaceholde
         value={repsText}
         onChange={(e) => onRepsChange(e.target.value)}
         onFocus={(e) => e.currentTarget.select()}
-        onBlur={() => setRepsText(repsToText(set.reps))}
+        onBlur={() => setRepsText(normalizeOnBlur(repsText, repsToText(set.reps), true))}
         onAnimationEnd={() => setShake(false)}
         enterKeyHint="done"
         placeholder={repsPlaceholder ?? 'reps'}

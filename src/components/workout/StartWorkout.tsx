@@ -22,6 +22,7 @@ export function StartWorkout({ unit }: { unit: WeightUnit }) {
   const [starting, setStarting] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const state = location.state as LocationState
+  const loaded = routines !== undefined && lastDone !== undefined
 
   async function start(routineId?: string) {
     setStarting(routineId ?? 'free')
@@ -68,11 +69,12 @@ export function StartWorkout({ unit }: { unit: WeightUnit }) {
           </p>
         )}
 
-        {routines?.length === 0 && (
+        {loaded && routines.length === 0 && (
           <EmptyState icon={Play} title="No tienes rutinas" description="Crea una rutina o empieza un entrenamiento libre." />
         )}
 
-        {routines?.map((routine) => {
+        {loaded &&
+          routines.map((routine) => {
           const last = lastDone?.get(routine.id)
           const names = routine.exercises.map((e) => e.exercise?.name).filter(Boolean)
           return (
@@ -95,12 +97,19 @@ export function StartWorkout({ unit }: { unit: WeightUnit }) {
           )
         })}
 
-        <Button variant="secondary" size="lg" onClick={() => start()} disabled={starting !== null}>
-          {starting === 'free' ? <Loader2 className="animate-spin" /> : <Plus />} Entrenamiento libre
-        </Button>
-        <Link to="/rutinas" className="py-2 text-center text-sm text-muted-foreground underline-offset-4 active:underline">
-          Gestionar rutinas
-        </Link>
+        {loaded && (
+          <>
+            <Button variant="secondary" size="lg" onClick={() => start()} disabled={starting !== null}>
+              {starting === 'free' ? <Loader2 className="animate-spin" /> : <Plus />} Entrenamiento libre
+            </Button>
+            <Link
+              to="/rutinas"
+              className="py-2 text-center text-sm text-muted-foreground underline-offset-4 active:underline"
+            >
+              Gestionar rutinas
+            </Link>
+          </>
+        )}
       </PageContainer>
     </>
   )

@@ -9,8 +9,8 @@ function CardHeader({ className, ...props }: ComponentProps<'div'>) {
   return <div className={cn('flex flex-col gap-1 p-4', className)} {...props} />
 }
 
-function CardTitle({ className, ...props }: ComponentProps<'h3'>) {
-  return <h3 className={cn('text-lg leading-tight font-semibold', className)} {...props} />
+function CardTitle({ className, ...props }: ComponentProps<'h2'>) {
+  return <h2 className={cn('text-lg leading-tight font-semibold', className)} {...props} />
 }
 
 function CardDescription({ className, ...props }: ComponentProps<'p'>) {

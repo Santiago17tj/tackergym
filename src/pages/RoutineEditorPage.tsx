@@ -1,5 +1,5 @@
 import { ArrowDown, ArrowUp, Loader2, Plus, Save, Trash2, X } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useBlocker, useNavigate, useParams } from 'react-router'
 import { PageContainer } from '@/components/layout/PageContainer'
 import { PageHeader } from '@/components/layout/PageHeader'
@@ -60,19 +60,27 @@ function RoutineEditor({ routineId, initial }: { routineId?: string; initial: Dr
   const [pickerOpen, setPickerOpen] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [done, setDone] = useState(false)
   const [nameError, setNameError] = useState(false)
+  /** true justo antes de salir tras guardar/borrar: no hay que preguntar. */
+  const leavingRef = useRef(false)
 
   const dirty = useMemo(() => JSON.stringify(draft) !== JSON.stringify(initial), [draft, initial])
-  const blocker = useBlocker(dirty && !done)
+  const blocker = useBlocker(() => dirty && !leavingRef.current)
 
   // Aviso nativo si se cierra la pestaña/app con cambios sin guardar.
   useEffect(() => {
-    if (!dirty || done) return
-    const onBeforeUnload = (e: BeforeUnloadEvent) => e.preventDefault()
+    if (!dirty) return
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (!leavingRef.current) e.preventDefault()
+    }
     window.addEventListener('beforeunload', onBeforeUnload)
     return () => window.removeEventListener('beforeunload', onBeforeUnload)
-  }, [dirty, done])
+  }, [dirty])
+
+  function leave() {
+    leavingRef.current = true
+    navigate('/rutinas', { replace: true })
+  }
 
   function updateItem(itemId: string, changes: Partial<RoutineExercise>) {
     setDraft((d) => ({
@@ -108,16 +116,11 @@ function RoutineEditor({ routineId, initial }: { routineId?: string; initial: Dr
     try {
       if (routineId) await updateRoutine(routineId, draft)
       else await createRoutine(draft)
-      setDone(true)
+      leave()
     } finally {
       setSaving(false)
     }
   }
-
-  // Navega cuando `done` ya desactivó el bloqueador.
-  useEffect(() => {
-    if (done) navigate('/rutinas', { replace: true })
-  }, [done, navigate])
 
   return (
     <>
@@ -250,8 +253,8 @@ function RoutineEditor({ routineId, initial }: { routineId?: string; initial: Dr
         onCancel={() => setConfirmDelete(false)}
         onConfirm={async () => {
           setConfirmDelete(false)
+          leave()
           if (routineId) await deleteRoutine(routineId)
-          setDone(true)
         }}
       >
         Los entrenamientos que ya hiciste con ella se conservan en el historial.

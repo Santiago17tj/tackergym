@@ -66,30 +66,48 @@ export function backupFileName(date = new Date()): string {
   return `${BACKUP_FORMAT}_${stamp}.json`
 }
 
-export type ExportResult = 'shared' | 'downloaded' | 'cancelled'
+export type ExportResult =
+  | { status: 'shared' | 'downloaded' | 'cancelled' }
+  /** Safari exige un gesto "reciente" para compartir: hay que volver a tocar. */
+  | { status: 'needs-tap'; file: File }
+
+export async function createBackupFile(): Promise<File> {
+  const backup = await createBackup()
+  return new File([JSON.stringify(backup, null, 2)], backupFileName(), { type: 'application/json' })
+}
+
+function canShareFile(file: File): boolean {
+  const isTouchDevice = window.matchMedia('(pointer: coarse)').matches
+  return isTouchDevice && typeof navigator.canShare === 'function' && navigator.canShare({ files: [file] })
+}
 
 /**
- * Genera el backup y lo entrega al usuario. En móviles usa la hoja de compartir
- * nativa (permite "Guardar en Archivos", Drive, WhatsApp…); si no está disponible
- * descarga el archivo directamente.
+ * Entrega un archivo ya generado: hoja de compartir nativa en móviles
+ * ("Guardar en Archivos", Drive, WhatsApp…) o descarga directa.
+ * Debe llamarse dentro de un gesto del usuario.
  */
-export async function exportBackup(): Promise<ExportResult> {
-  const backup = await createBackup()
-  const json = JSON.stringify(backup, null, 2)
-  const name = backupFileName()
-  const file = new File([json], name, { type: 'application/json' })
-
-  const isTouchDevice = window.matchMedia('(pointer: coarse)').matches
-  if (isTouchDevice && typeof navigator.canShare === 'function' && navigator.canShare({ files: [file] })) {
+export async function deliverBackupFile(file: File): Promise<ExportResult> {
+  if (canShareFile(file)) {
     try {
-      await navigator.share({ files: [file], title: name })
-      return 'shared'
+      await navigator.share({ files: [file], title: file.name })
+      return { status: 'shared' }
     } catch (error) {
-      if (error instanceof DOMException && error.name === 'AbortError') return 'cancelled'
+      if (error instanceof DOMException && error.name === 'AbortError') return { status: 'cancelled' }
+      if (error instanceof DOMException && error.name === 'NotAllowedError') return { status: 'needs-tap', file }
       // Cualquier otro fallo: se intenta la descarga clásica.
     }
   }
+  downloadFile(file)
+  return { status: 'downloaded' }
+}
 
+/** Genera el backup y lo entrega al usuario. */
+export async function exportBackup(): Promise<ExportResult> {
+  return deliverBackupFile(await createBackupFile())
+}
+
+function downloadFile(file: File) {
+  const name = file.name
   const url = URL.createObjectURL(file)
   const link = document.createElement('a')
   link.href = url
@@ -98,7 +116,6 @@ export async function exportBackup(): Promise<ExportResult> {
   link.click()
   link.remove()
   setTimeout(() => URL.revokeObjectURL(url), 10_000)
-  return 'downloaded'
 }
 
 // ---------------------------------------------------------------------------
@@ -120,6 +137,32 @@ const oneOf =
 
 function shape<T>(spec: Record<string, (v: unknown) => boolean>): Guard<T> {
   return (value): value is T => isObject(value) && Object.entries(spec).every(([key, check]) => check(value[key]))
+}
+
+/** Copia solo las claves indicadas (descarta campos desconocidos del archivo). */
+function pick<T>(row: T, keys: readonly (keyof T)[]): T {
+  const out = {} as T
+  for (const key of keys) out[key] = row[key]
+  return out
+}
+
+const ROUTINE_EXERCISE_KEYS = ['id', 'exerciseId', 'targetSets', 'targetRepsMin', 'targetRepsMax', 'restSeconds'] as const
+const SESSION_EXERCISE_KEYS = ['id', 'exerciseId', 'restSeconds', 'targetRepsMin', 'targetRepsMax'] as const
+
+const sanitizers: { [K in keyof BackupData]: (row: BackupData[K][number]) => BackupData[K][number] } = {
+  exercises: (r) =>
+    pick(r, ['id', 'name', 'muscleGroup', 'equipment', 'isCustom', 'archived', 'createdAt', 'updatedAt']),
+  routines: (r) => ({
+    ...pick(r, ['id', 'name', 'description', 'order', 'createdAt', 'updatedAt', 'exercises']),
+    exercises: r.exercises.map((e) => pick(e, ROUTINE_EXERCISE_KEYS)),
+  }),
+  workoutSessions: (r) => ({
+    ...pick(r, ['id', 'routineId', 'name', 'status', 'notes', 'startedAt', 'endedAt', 'exercises']),
+    exercises: r.exercises.map((e) => pick(e, SESSION_EXERCISE_KEYS)),
+  }),
+  sets: (r) =>
+    pick(r, ['id', 'sessionId', 'sessionExerciseId', 'exerciseId', 'setNumber', 'weightKg', 'reps', 'completedAt']),
+  settings: (r) => ({ key: r.key, value: r.value }) as SettingRow,
 }
 
 const isRoutineExercise = shape<RoutineExercise>({
@@ -216,7 +259,8 @@ export function parseBackup(raw: unknown): BackupFile {
     if (badIndex !== -1) throw new BackupError(`Registro inválido en "${table}" (posición ${badIndex + 1}).`)
     const ids = new Set(rows.map((r: Record<string, unknown>) => r.id ?? r.key))
     if (ids.size !== rows.length) throw new BackupError(`Hay registros duplicados en "${table}".`)
-    result[table] = rows
+    const sanitize = sanitizers[table] as (row: unknown) => unknown
+    result[table] = rows.map(sanitize)
   }
 
   const backupData = result as BackupData
@@ -255,7 +299,11 @@ export function summarizeBackup(backup: BackupFile): BackupSummary {
   }
 }
 
+/** Un backup real ocupa KB o pocos MB; algo mucho mayor no es un backup de la app. */
+export const MAX_BACKUP_BYTES = 50 * 1024 * 1024
+
 export async function readBackupFile(file: File): Promise<BackupFile> {
+  if (file.size > MAX_BACKUP_BYTES) throw new BackupError('El archivo es demasiado grande para ser una copia de la app.')
   let raw: unknown
   try {
     raw = JSON.parse(await file.text())

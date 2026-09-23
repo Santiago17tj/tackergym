@@ -135,6 +135,8 @@ const isSessionExercise = shape<SessionExercise>({
   id: isNonEmptyString,
   exerciseId: isNonEmptyString,
   restSeconds: isNullableNumber,
+  targetRepsMin: isNullableNumber,
+  targetRepsMax: isNullableNumber,
 })
 
 const arrayOf =
@@ -186,6 +188,7 @@ const guards: { [K in keyof BackupData]: Guard<BackupData[K][number]> } = {
     if (!isObject(v)) return false
     if (v.key === 'weightUnit') return oneOf(WEIGHT_UNITS)(v.value)
     if (v.key === 'defaultRestSeconds') return isNumber(v.value) && v.value >= 0
+    if (v.key === 'autoStartRest' || v.key === 'restSound' || v.key === 'restVibration') return isBoolean(v.value)
     return false
   },
 }

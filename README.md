@@ -44,6 +44,18 @@ npm run generate-pwa-assets  # regenera los iconos PNG desde public/logo.svg
 - Al arrancar se pide *almacenamiento persistente* para que el navegador no borre los datos.
 - El nombre de la app está centralizado en `src/config/app.ts`.
 
+## Entrenamiento en vivo
+
+- Empieza desde una rutina o en modo libre; solo puede haber un entrenamiento activo y sobrevive a recargas.
+- Tabla por ejercicio: **Serie · Anterior · Peso · Reps · ✓**. Los campos se **pre-llenan con la última
+  vez** (sobrecarga progresiva) y tocar "Anterior" copia esos valores.
+- Añadir/quitar series y ejercicios, reordenar, crear ejercicios desde el buscador.
+- **Cronómetro de descanso** automático al marcar ✓ (descanso del ejercicio o el de Ajustes), con
+  −15/+15 s, presets 30/60/90/120 s, pitido (Web Audio) y vibración (Android). Guarda la hora de fin,
+  así que sigue siendo exacto aunque el móvil congele la app.
+- La pantalla se mantiene encendida durante el entrenamiento (Wake Lock API).
+- Al finalizar se descartan las series sin marcar y se muestra un resumen (duración, series, volumen).
+
 ## PWA
 
 - `display: standalone`, orientación vertical, tema oscuro (`#09090b`).
@@ -63,5 +75,5 @@ y las cabeceras de caché (el `sw.js` y el manifest nunca se cachean; los assets
 
 - [x] **Fase 1** — Proyecto base, Tailwind, UI móvil y configuración PWA.
 - [x] **Fase 2** — Esquema Dexie, seed de ejercicios y rutinas, ajustes kg/lb, backup/restore JSON.
-- [ ] **Fase 3** — Entrenamiento en vivo y temporizador de descanso.
+- [x] **Fase 3** — Entrenamiento en vivo y temporizador de descanso.
 - [ ] **Fase 4** — Rutinas, historial/récords y build final para Vercel.

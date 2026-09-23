@@ -61,6 +61,9 @@ export interface SessionExercise {
   id: string
   exerciseId: string
   restSeconds: number | null
+  /** Rango objetivo copiado de la rutina (placeholder de reps); null si no hay objetivo. */
+  targetRepsMin: number | null
+  targetRepsMax: number | null
 }
 
 export interface WorkoutSession {
@@ -97,12 +100,23 @@ export interface AppSettings {
   weightUnit: WeightUnit
   /** Descanso por defecto en segundos. */
   defaultRestSeconds: number
+  /** Iniciar el cronómetro de descanso al marcar una serie como completada. */
+  autoStartRest: boolean
+  /** Pitido al terminar el descanso. */
+  restSound: boolean
+  /** Vibración al terminar el descanso (Android; iOS no la soporta en web). */
+  restVibration: boolean
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
   weightUnit: 'kg',
   defaultRestSeconds: 90,
+  autoStartRest: true,
+  restSound: true,
+  restVibration: true,
 }
+
+export const REST_PRESETS = [30, 60, 90, 120] as const
 
 export type SettingKey = keyof AppSettings
 

@@ -9,7 +9,13 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { useMemo } from 'react'
 import {
   db,
+  getActiveSession,
   getLastPerformance,
+  getSessionSets,
+  type LastPerformance,
+  type SessionExercise,
+  type WorkoutSession,
+  type WorkoutSet,
   listExercises,
   listRoutines,
   MUSCLE_GROUPS,
@@ -123,6 +129,79 @@ export function useLastPerformance(exerciseId: string | undefined, excludeSessio
     () => (exerciseId ? getLastPerformance(exerciseId, { excludeSessionId }) : null),
     [exerciseId, excludeSessionId],
   )
+}
+
+/**
+ * Última marca de varios ejercicios a la vez (columna "Anterior" del
+ * entrenamiento en vivo), excluyendo la sesión en curso.
+ */
+export function useLastPerformances(
+  exerciseIds: string[],
+  excludeSessionId?: string,
+): Map<string, LastPerformance | null> | undefined {
+  const key = [...new Set(exerciseIds)].sort().join('|')
+  return useLiveQuery(async () => {
+    const ids = key ? key.split('|') : []
+    const results = await Promise.all(ids.map((id) => getLastPerformance(id, { excludeSessionId })))
+    return new Map(ids.map((id, i) => [id, results[i]]))
+  }, [key, excludeSessionId])
+}
+
+/** Fecha del último entrenamiento completado de cada rutina. */
+export function useRoutineLastDone(): Map<string, number> | undefined {
+  return useLiveQuery(async () => {
+    const sessions = await db.workoutSessions.where('status').equals('completed').toArray()
+    const map = new Map<string, number>()
+    for (const s of sessions) {
+      if (s.routineId && s.startedAt > (map.get(s.routineId) ?? 0)) map.set(s.routineId, s.startedAt)
+    }
+    return map
+  }, [])
+}
+
+// ---------------------------------------------------------------------------
+// Entrenamiento activo
+// ---------------------------------------------------------------------------
+
+export type ActiveWorkoutBlock = {
+  block: SessionExercise
+  exercise: Exercise | null
+  sets: WorkoutSet[]
+}
+
+export type ActiveWorkout = {
+  session: WorkoutSession
+  blocks: ActiveWorkoutBlock[]
+  completedSets: number
+  totalSets: number
+}
+
+/** Entrenamiento en curso con sus ejercicios y series; null si no hay ninguno. */
+export function useActiveWorkout(): ActiveWorkout | null | undefined {
+  return useLiveQuery(async () => {
+    const session = await getActiveSession()
+    if (!session) return null
+    const [sets, exercises] = await Promise.all([
+      getSessionSets(session.id),
+      db.exercises.bulkGet(session.exercises.map((b) => b.exerciseId)),
+    ])
+    const blocks = session.exercises.map((block, i) => ({
+      block,
+      exercise: exercises[i] ?? null,
+      sets: sets.filter((s) => s.sessionExerciseId === block.id),
+    }))
+    return {
+      session,
+      blocks,
+      completedSets: sets.filter((s) => s.completedAt !== null).length,
+      totalSets: sets.length,
+    }
+  }, [])
+}
+
+/** true si hay un entrenamiento en curso (para el indicador de la navegación). */
+export function useHasActiveWorkout(): boolean {
+  return useLiveQuery(async () => (await db.workoutSessions.where('status').equals('active').count()) > 0, []) ?? false
 }
 
 // ---------------------------------------------------------------------------

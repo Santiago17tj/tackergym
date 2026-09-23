@@ -1,6 +1,9 @@
 import { Dumbbell, History, ListChecks, Settings } from 'lucide-react'
 import { NavLink, Outlet } from 'react-router'
 import { UpdatePrompt } from '@/components/pwa/UpdatePrompt'
+import { RestTimerBar } from '@/features/rest-timer/RestTimerBar'
+import { useRestTimer } from '@/features/rest-timer/store'
+import { useHasActiveWorkout } from '@/hooks/useDb'
 import { cn } from '@/lib/utils'
 
 const NAV_ITEMS = [
@@ -15,13 +18,23 @@ const NAV_ITEMS = [
  * (zona del pulgar), respetando las safe areas del notch y la barra de gestos.
  */
 export function AppShell() {
+  const hasActiveWorkout = useHasActiveWorkout()
+  const restActive = useRestTimer() !== null
+
   return (
     <div className="flex min-h-dvh flex-col px-safe">
-      <main className="flex-1 pt-safe pb-[calc(var(--nav-h)+var(--safe-bottom))]">
+      <main
+        className={cn(
+          'flex-1 pt-safe',
+          // Deja hueco para la barra del cronómetro cuando está visible.
+          restActive ? 'pb-[calc(var(--nav-h)+var(--safe-bottom)+6rem)]' : 'pb-[calc(var(--nav-h)+var(--safe-bottom))]',
+        )}
+      >
         <Outlet />
       </main>
 
       <UpdatePrompt />
+      <RestTimerBar />
 
       <nav
         aria-label="Navegación principal"
@@ -40,7 +53,14 @@ export function AppShell() {
                   )
                 }
               >
-                <Icon className="size-6" aria-hidden />
+                <span className="relative">
+                  <Icon className="size-6" aria-hidden />
+                  {to === '/' && hasActiveWorkout && (
+                    <span className="absolute -top-0.5 -right-1 size-2.5 animate-pulse rounded-full bg-primary ring-2 ring-background">
+                      <span className="sr-only">Entrenamiento en curso</span>
+                    </span>
+                  )}
+                </span>
                 {label}
               </NavLink>
             </li>

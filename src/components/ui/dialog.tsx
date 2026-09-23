@@ -50,18 +50,20 @@ export function ConfirmDialog({
       }}
       className="m-auto w-[calc(100%-2rem)] max-w-sm rounded-xl border bg-card p-0 text-card-foreground backdrop:bg-black/70 backdrop:backdrop-blur-sm"
     >
-      <div className="flex flex-col gap-3 p-5">
-        <h2 className="text-lg font-bold">{title}</h2>
-        {children && <div className="text-sm text-muted-foreground">{children}</div>}
-        <div className="mt-2 grid grid-cols-2 gap-2">
-          <Button variant="secondary" onClick={onCancel} disabled={busy}>
-            {cancelLabel}
-          </Button>
-          <Button variant={destructive ? 'destructive' : 'default'} onClick={onConfirm} disabled={busy}>
-            {confirmLabel}
-          </Button>
+      {open && (
+        <div className="flex flex-col gap-3 p-5">
+          <h2 className="text-lg font-bold">{title}</h2>
+          {children && <div className="text-sm text-muted-foreground">{children}</div>}
+          <div className="mt-2 grid grid-cols-2 gap-2">
+            <Button variant="secondary" onClick={onCancel} disabled={busy}>
+              {cancelLabel}
+            </Button>
+            <Button variant={destructive ? 'destructive' : 'default'} onClick={onConfirm} disabled={busy}>
+              {confirmLabel}
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
     </dialog>
   )
 }

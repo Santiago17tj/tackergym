@@ -148,3 +148,34 @@
     font-variant-numeric: tabular-nums;
   }
 }
+
+/* Bloquea el scroll de fondo mientras hay un diálogo/hoja abierta (iOS) */
+html:has(dialog[open]) {
+  overflow: hidden;
+}
+
+/* Animación de entrada de las hojas inferiores */
+@media (prefers-reduced-motion: no-preference) {
+  dialog[open] {
+    animation: sheet-in 180ms ease-out;
+  }
+  @keyframes sheet-in {
+    from {
+      transform: translateY(12px);
+      opacity: 0;
+    }
+  }
+}
+
+/* Aviso visual cuando falta un dato (p. ej. reps al marcar una serie) */
+@keyframes shake {
+  25% {
+    transform: translateX(-4px);
+  }
+  75% {
+    transform: translateX(4px);
+  }
+}
+.animate-shake {
+  animation: shake 0.25s ease-in-out 2;
+}

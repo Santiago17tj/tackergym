@@ -150,7 +150,7 @@ describe('última marca (sobrecarga progresiva)', () => {
 
 describe('ajustes', () => {
   it('usa kg y 90 s por defecto y guarda cambios', async () => {
-    expect(await getSettings()).toEqual({ weightUnit: 'kg', defaultRestSeconds: 90 })
+    expect(await getSettings()).toMatchObject({ weightUnit: 'kg', defaultRestSeconds: 90, autoStartRest: true })
     await setSetting('weightUnit', 'lb')
     expect((await getSettings()).weightUnit).toBe('lb')
   })

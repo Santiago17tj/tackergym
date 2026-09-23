@@ -13,7 +13,7 @@ describe('backup / restore', () => {
       routineId: 'routine-push',
       name: 'Push',
       status: 'completed',
-      exercises: [{ id: 'b1', exerciseId: 'bench-press', restSeconds: null }],
+      exercises: [{ id: 'b1', exerciseId: 'bench-press', restSeconds: null, targetRepsMin: 5, targetRepsMax: 5 }],
       notes: '',
       startedAt: 1,
       endedAt: 2,

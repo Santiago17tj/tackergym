@@ -1,4 +1,4 @@
-import { Check } from 'lucide-react'
+import { Check, Trophy } from 'lucide-react'
 import { memo, useEffect, useRef, useState } from 'react'
 import { NumericInput } from '@/components/ui/input'
 import { setSetCompleted, updateSet, WorkoutError, type WeightUnit, type WorkoutSet } from '@/db'
@@ -15,6 +15,10 @@ type SetRowProps = {
   previous: LastPerformance['sets'][number] | undefined
   unit: WeightUnit
   repsPlaceholder: string | null
+  /** Serie completada que supera el mejor peso histórico. */
+  isRecord: boolean
+  /** Primera serie pendiente del ejercicio actual: se resalta su ✓. */
+  isNext: boolean
   onCompleted: (set: WorkoutSet) => void
 }
 
@@ -33,7 +37,15 @@ function normalizeOnBlur(text: string, stored: string, integer = false): string 
   return String(integer ? Math.round(value) : Math.round(value * 100) / 100)
 }
 
-export const SetRow = memo(function SetRow({ set, previous, unit, repsPlaceholder, onCompleted }: SetRowProps) {
+export const SetRow = memo(function SetRow({
+  set,
+  previous,
+  unit,
+  repsPlaceholder,
+  isRecord,
+  isNext,
+  onCompleted,
+}: SetRowProps) {
   const weightRef = useRef<HTMLInputElement>(null)
   const repsRef = useRef<HTMLInputElement>(null)
   const [weightText, setWeightText] = useState(() => weightToText(set.weightKg, unit))
@@ -90,14 +102,25 @@ export const SetRow = memo(function SetRow({ set, previous, unit, repsPlaceholde
       : '—'
 
   return (
-    <div className={cn(SET_GRID, 'rounded-lg px-1 py-1 transition-colors', done && 'bg-success/15')}>
+    <div
+      className={cn(
+        SET_GRID,
+        'rounded-lg px-1 py-1 transition-colors',
+        done && (isRecord ? 'bg-primary/20' : 'bg-success/15'),
+        isNext && 'bg-accent/60',
+      )}
+    >
       <span
         className={cn(
-          'tabular text-center text-base font-bold',
-          done ? 'text-success' : 'text-muted-foreground',
+          'tabular flex justify-center text-base font-bold',
+          done ? (isRecord ? 'text-primary' : 'text-success') : 'text-muted-foreground',
         )}
       >
-        {set.setNumber}
+        {isRecord ? (
+          <Trophy className="size-5" aria-label={`Serie ${set.setNumber}: nuevo récord`} />
+        ) : (
+          set.setNumber
+        )}
       </span>
 
       <button
@@ -105,7 +128,7 @@ export const SetRow = memo(function SetRow({ set, previous, unit, repsPlaceholde
         onClick={copyPrevious}
         disabled={!previous}
         className="tabular h-12 truncate rounded-md text-center text-sm text-muted-foreground active:bg-accent disabled:active:bg-transparent"
-        aria-label={previous ? `Copiar serie anterior: ${previousText}` : 'Sin serie anterior'}
+        aria-label={previous ? `Usar lo de la última vez: ${previousText}` : 'Sin datos de la última vez'}
       >
         {previousText}
       </button>
@@ -142,7 +165,13 @@ export const SetRow = memo(function SetRow({ set, previous, unit, repsPlaceholde
         onClick={toggle}
         className={cn(
           'flex size-12 items-center justify-center rounded-lg transition-[background-color,transform] active:scale-90',
-          done ? 'bg-success text-black' : 'bg-secondary text-muted-foreground',
+          done
+            ? isRecord
+              ? 'bg-primary text-primary-foreground'
+              : 'bg-success text-black'
+            : isNext
+              ? 'bg-secondary text-primary ring-2 ring-primary'
+              : 'bg-secondary text-muted-foreground',
         )}
       >
         <Check className="size-6" strokeWidth={3} />

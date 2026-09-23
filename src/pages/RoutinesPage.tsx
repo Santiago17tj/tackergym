@@ -1,19 +1,22 @@
-import { ArrowDown, ArrowUp, Copy, ListChecks, MoreVertical, Pencil, Play, Plus, Trash2 } from 'lucide-react'
+import { ArrowDown, ArrowUp, ChevronDown, Copy, ListChecks, MoreVertical, Pencil, Play, Plus, Trash2 } from 'lucide-react'
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router'
+import { useNavigate } from 'react-router'
 import { EmptyState } from '@/components/EmptyState'
 import { PageContainer } from '@/components/layout/PageContainer'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { Chip } from '@/components/ui/chip'
 import { ConfirmDialog } from '@/components/ui/dialog'
 import { Sheet, SheetAction } from '@/components/ui/sheet'
 import { deleteRoutine, duplicateRoutine, moveRoutine, startWorkout, WorkoutError } from '@/db'
-import { useRoutinesWithExercises, type RoutineWithExercises } from '@/hooks/useDb'
+import { useRoutinesWithExercises, useSettings, type RoutineWithExercises } from '@/hooks/useDb'
 import { formatRepRange } from '@/lib/format'
+import { estimateRoutineMinutes, routineMuscleGroups } from '@/lib/routine-meta'
 
 export function RoutinesPage() {
   const routines = useRoutinesWithExercises()
+  const settings = useSettings()
   const navigate = useNavigate()
   const [menuFor, setMenuFor] = useState<RoutineWithExercises | null>(null)
   const [deleting, setDeleting] = useState<RoutineWithExercises | null>(null)
@@ -70,15 +73,44 @@ export function RoutinesPage() {
 
         {routines?.map((routine) => {
           const totalSets = routine.exercises.reduce((sum, e) => sum + e.targetSets, 0)
+          const groups = routineMuscleGroups(routine.exercises)
           return (
-            <Card key={routine.id} className="relative">
-              <Link to={`/rutinas/${routine.id}`} className="block rounded-xl p-4 pr-14 active:bg-accent/50">
-                <h2 className="truncate text-lg font-bold">{routine.name}</h2>
-                {routine.description && <p className="truncate text-sm text-muted-foreground">{routine.description}</p>}
-                <p className="mt-2 text-xs font-medium tracking-wide text-primary uppercase">
-                  {routine.exercises.length} ejercicios · {totalSets} series
-                </p>
-                <ul className="mt-2 space-y-1 text-sm">
+            <Card key={routine.id} className="overflow-hidden">
+              <div className="flex items-start gap-2 p-4 pb-3">
+                <div className="min-w-0 flex-1">
+                  <h2 className="truncate text-xl font-bold">{routine.name}</h2>
+                  {routine.description && (
+                    <p className="truncate text-sm text-muted-foreground">{routine.description}</p>
+                  )}
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  className="-mt-1 -mr-2"
+                  onClick={() => setMenuFor(routine)}
+                  aria-label={`Más opciones de ${routine.name}`}
+                >
+                  <MoreVertical />
+                </Button>
+              </div>
+
+              <div className="flex flex-wrap gap-1.5 px-4">
+                {groups.map((g) => (
+                  <Chip key={g}>{g}</Chip>
+                ))}
+              </div>
+              <p className="mt-3 flex flex-wrap gap-x-3 px-4 text-sm text-muted-foreground">
+                <span>{routine.exercises.length} ejercicios</span>
+                <span>{totalSets} series</span>
+                <span>~{estimateRoutineMinutes(routine.exercises, settings?.defaultRestSeconds ?? 90)} min</span>
+              </p>
+
+              <details className="group mt-2 px-4">
+                <summary className="flex h-10 cursor-pointer list-none items-center gap-1 text-sm font-medium text-muted-foreground select-none">
+                  <ChevronDown className="size-4 transition-transform group-open:rotate-180" aria-hidden />
+                  Ver ejercicios
+                </summary>
+                <ul className="space-y-1 pb-2 text-sm">
                   {routine.exercises.map((item) => (
                     <li key={item.id} className="flex justify-between gap-3">
                       <span className="truncate">{item.exercise?.name ?? 'Ejercicio eliminado'}</span>
@@ -88,16 +120,16 @@ export function RoutinesPage() {
                     </li>
                   ))}
                 </ul>
-              </Link>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                className="absolute top-2 right-2"
-                onClick={() => setMenuFor(routine)}
-                aria-label={`Opciones de ${routine.name}`}
-              >
-                <MoreVertical />
-              </Button>
+              </details>
+
+              <div className="grid grid-cols-2 gap-2 p-4 pt-2">
+                <Button variant="secondary" onClick={() => navigate(`/rutinas/${routine.id}`)}>
+                  <Pencil /> Editar
+                </Button>
+                <Button onClick={() => start(routine)} disabled={routine.exercises.length === 0}>
+                  <Play className="fill-current" /> Empezar
+                </Button>
+              </div>
             </Card>
           )
         })}
@@ -105,8 +137,6 @@ export function RoutinesPage() {
 
       <Sheet open={!!menuFor} onClose={() => setMenuFor(null)} title={menuFor?.name ?? ''}>
         <div className="py-1">
-          <SheetAction icon={<Play />} label="Empezar entrenamiento" onClick={act(start)} />
-          <SheetAction icon={<Pencil />} label="Editar" onClick={act((r) => navigate(`/rutinas/${r.id}`))} />
           <SheetAction icon={<Copy />} label="Duplicar" onClick={act((r) => duplicateRoutine(r.id))} />
           <SheetAction icon={<ArrowUp />} label="Mover arriba" disabled={index <= 0} onClick={act((r) => moveRoutine(r.id, -1))} />
           <SheetAction

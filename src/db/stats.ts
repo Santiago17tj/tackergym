@@ -227,3 +227,106 @@ function groupBy<T, K>(items: T[], key: (item: T) => K): Map<K, T[]> {
   }
   return map
 }
+
+// ---------------------------------------------------------------------------
+// Inicio: constancia semanal y rutina sugerida
+// ---------------------------------------------------------------------------
+
+/** Lunes 00:00 (hora local) de la semana de `timestamp`. */
+export function startOfWeek(timestamp: number): number {
+  const d = new Date(timestamp)
+  d.setHours(0, 0, 0, 0)
+  const day = (d.getDay() + 6) % 7 // 0 = lunes
+  d.setDate(d.getDate() - day)
+  return d.getTime()
+}
+
+export type HomeSummary = {
+  /** Lunes→domingo de la semana actual: ¿se entrenó ese día? */
+  weekDays: boolean[]
+  workoutsThisWeek: number
+  /** Semanas consecutivas con al menos un entrenamiento (la actual cuenta si ya hay alguno). */
+  weekStreak: number
+  totalWorkouts: number
+  /** Rutina que toca: la que hace más tiempo que no se hace (o nunca), respetando el orden. */
+  suggestedRoutineId: string | null
+  lastDoneByRoutine: Map<string, number>
+}
+
+export function summarizeHome(
+  sessions: Pick<WorkoutSession, 'startedAt' | 'routineId'>[],
+  routineIds: string[],
+  now = Date.now(),
+): HomeSummary {
+  const weekStart = startOfWeek(now)
+  const weekDays = Array.from({ length: 7 }, () => false)
+  const weeks = new Set<number>()
+  const lastDoneByRoutine = new Map<string, number>()
+
+  for (const s of sessions) {
+    weeks.add(startOfWeek(s.startedAt))
+    if (s.startedAt >= weekStart) {
+      weekDays[(new Date(s.startedAt).getDay() + 6) % 7] = true
+    }
+    if (s.routineId && s.startedAt > (lastDoneByRoutine.get(s.routineId) ?? 0)) {
+      lastDoneByRoutine.set(s.routineId, s.startedAt)
+    }
+  }
+
+  // Racha: desde esta semana (o la anterior si esta aún no tiene entrenos) hacia atrás.
+  let weekStreak = 0
+  const week = new Date(weekStart)
+  if (!weeks.has(week.getTime())) week.setDate(week.getDate() - 7)
+  while (weeks.has(week.getTime())) {
+    weekStreak++
+    week.setDate(week.getDate() - 7)
+  }
+
+  let suggestedRoutineId: string | null = null
+  let oldest = Infinity
+  for (const id of routineIds) {
+    const last = lastDoneByRoutine.get(id) ?? -1
+    if (last < oldest) {
+      oldest = last
+      suggestedRoutineId = id
+    }
+  }
+
+  return {
+    weekDays,
+    workoutsThisWeek: sessions.filter((s) => s.startedAt >= weekStart).length,
+    weekStreak,
+    totalWorkouts: sessions.length,
+    suggestedRoutineId,
+    lastDoneByRoutine,
+  }
+}
+
+export async function getHomeSummary(): Promise<HomeSummary> {
+  const [sessions, routines] = await Promise.all([
+    db.workoutSessions.where('status').equals('completed').toArray(),
+    db.routines.orderBy('order').toArray(),
+  ])
+  return summarizeHome(
+    sessions,
+    routines.map((r) => r.id),
+  )
+}
+
+/**
+ * Mejor peso histórico de cada ejercicio (solo entrenamientos finalizados),
+ * para celebrar un récord en cuanto se marca la serie.
+ */
+export async function getExerciseBests(exerciseIds: string[]): Promise<Map<string, number>> {
+  const sessions = await completedSessionMap()
+  const bests = new Map<string, number>()
+  await Promise.all(
+    exerciseIds.map(async (id) => {
+      const sets = await db.sets.where('[exerciseId+completedAt]').between([id, 0], [id, Infinity]).toArray()
+      let best = 0
+      for (const s of sets) if (sessions.has(s.sessionId)) best = Math.max(best, s.weightKg ?? 0)
+      bests.set(id, best)
+    }),
+  )
+  return bests
+}

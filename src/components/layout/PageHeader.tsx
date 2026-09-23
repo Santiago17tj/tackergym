@@ -8,10 +8,12 @@ type PageHeaderProps = {
   action?: ReactNode
   /** Muestra "atrás". Si no hay historial dentro de la app, va a esta ruta. */
   backTo?: string
+  /** Contenido extra bajo la cabecera (p. ej. barra de progreso). */
+  children?: ReactNode
 }
 
 /** Cabecera "sticky" de cada pantalla, debajo del notch. */
-export function PageHeader({ title, subtitle, action, backTo }: PageHeaderProps) {
+export function PageHeader({ title, subtitle, action, backTo, children }: PageHeaderProps) {
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -40,6 +42,7 @@ export function PageHeader({ title, subtitle, action, backTo }: PageHeaderProps)
         </div>
         {action}
       </div>
+      {children}
     </header>
   )
 }

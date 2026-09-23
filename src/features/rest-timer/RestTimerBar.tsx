@@ -75,31 +75,26 @@ export function RestTimerBar() {
           finished ? 'border-primary bg-primary text-primary-foreground' : 'bg-card',
         )}
       >
-        {!finished && (
-          <div
-            aria-hidden
-            className="absolute inset-y-0 left-0 bg-primary/15 transition-[width] duration-300 ease-linear"
-            style={{ width: `${progress * 100}%` }}
-          />
-        )}
-
-        <div className="relative flex items-center gap-2 p-2 pl-4">
+        <div className="relative flex items-center gap-2 p-2">
           <button
             type="button"
             onClick={() => setExpanded((v) => !v)}
-            className="flex min-w-0 flex-1 flex-col items-start text-left"
+            className="flex min-w-0 flex-1 items-center gap-3 text-left"
             aria-expanded={expanded}
             aria-label="Opciones de descanso"
           >
             {finished ? (
-              <span className="flex items-center gap-2 text-xl font-extrabold">
+              <span className="flex items-center gap-2 pl-2 text-xl font-extrabold">
                 <BellRing className="size-6 animate-bounce" /> ¡A por la siguiente!
               </span>
             ) : (
               <>
-                <span className="tabular text-3xl leading-none font-extrabold">{formatClock(remaining)}</span>
-                <span className="mt-1 max-w-full truncate text-xs text-muted-foreground">
-                  Descanso{timer.label ? ` · ${timer.label}` : ''}
+                <ProgressRing progress={progress} />
+                <span className="flex min-w-0 flex-col">
+                  <span className="tabular text-3xl leading-none font-extrabold">{formatClock(remaining)}</span>
+                  <span className="mt-1 max-w-full truncate text-xs text-muted-foreground">
+                    Descanso{timer.label ? ` · ${timer.label}` : ''}
+                  </span>
                 </span>
               </>
             )}
@@ -145,6 +140,28 @@ export function RestTimerBar() {
         )}
       </div>
     </div>
+  )
+}
+
+/** Anillo que se va llenando a medida que pasa el descanso. */
+function ProgressRing({ progress }: { progress: number }) {
+  const r = 20
+  const circumference = 2 * Math.PI * r
+  return (
+    <svg viewBox="0 0 48 48" className="size-12 shrink-0 -rotate-90" aria-hidden>
+      <circle cx="24" cy="24" r={r} fill="none" strokeWidth="5" className="stroke-secondary" />
+      <circle
+        cx="24"
+        cy="24"
+        r={r}
+        fill="none"
+        strokeWidth="5"
+        strokeLinecap={progress > 0.03 ? 'round' : 'butt'}
+        className="stroke-primary transition-[stroke-dashoffset] duration-300 ease-linear"
+        strokeDasharray={circumference}
+        strokeDashoffset={circumference * (1 - progress)}
+      />
+    </svg>
   )
 }
 

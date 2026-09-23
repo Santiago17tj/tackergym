@@ -1,5 +1,5 @@
 import { Flag, Plus, Timer, Trash2 } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { PageContainer } from '@/components/layout/PageContainer'
 import { PageHeader } from '@/components/layout/PageHeader'
@@ -7,10 +7,11 @@ import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/dialog'
 import { addExerciseToWorkout, discardWorkout, finishWorkout, WorkoutError, type AppSettings } from '@/db'
 import { restTimer } from '@/features/rest-timer/store'
-import { useLastPerformances, type ActiveWorkout } from '@/hooks/useDb'
+import { useExerciseBests, useLastPerformances, type ActiveWorkout } from '@/hooks/useDb'
 import { useNow } from '@/hooks/useNow'
 import { formatClock } from '@/lib/format'
-import { ExerciseBlock } from './ExerciseBlock'
+import { cn } from '@/lib/utils'
+import { ExerciseBlock, type BlockStatus } from './ExerciseBlock'
 import { ExercisePicker } from './ExercisePicker'
 
 type LiveWorkoutProps = {
@@ -30,6 +31,24 @@ export function LiveWorkout({ workout, settings }: LiveWorkoutProps) {
 
   const exerciseIds = useMemo(() => blocks.map((b) => b.block.exerciseId), [blocks])
   const lastPerformances = useLastPerformances(exerciseIds, session.id)
+  const bests = useExerciseBests(exerciseIds)
+
+  // Ejercicio actual = el primero con series pendientes.
+  const currentIndex = blocks.findIndex((b) => b.sets.some((s) => s.completedAt === null))
+  const statusOf = (i: number, done: boolean): BlockStatus =>
+    i === currentIndex ? 'current' : done ? 'done' : 'upcoming'
+
+  // Al terminar un ejercicio, lleva la vista al siguiente.
+  const previousIndexRef = useRef(currentIndex)
+  useEffect(() => {
+    const previous = previousIndexRef.current
+    previousIndexRef.current = currentIndex
+    if (currentIndex > previous && previous !== -1) {
+      const id = blocks[currentIndex]?.block.id
+      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      if (id) document.getElementById(`block-${id}`)?.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' })
+    }
+  }, [currentIndex, blocks])
 
   async function finish() {
     setBusy(true)
@@ -57,6 +76,9 @@ export function LiveWorkout({ workout, settings }: LiveWorkoutProps) {
   }
 
   const pendingSets = totalSets - completedSets
+  const progress = totalSets === 0 ? 0 : completedSets / totalSets
+  const allDone = totalSets > 0 && pendingSets === 0
+  const requestFinish = () => (completedSets > 0 ? setFinishOpen(true) : setDiscardOpen(true))
 
   return (
     <>
@@ -73,12 +95,23 @@ export function LiveWorkout({ workout, settings }: LiveWorkoutProps) {
             >
               <Timer />
             </Button>
-            <Button size="sm" onClick={() => (completedSets > 0 ? setFinishOpen(true) : setDiscardOpen(true))}>
+            <Button size="sm" onClick={requestFinish}>
               <Flag /> Finalizar
             </Button>
           </div>
         }
-      />
+      >
+        <div
+          role="progressbar"
+          aria-label="Series completadas"
+          aria-valuemin={0}
+          aria-valuemax={totalSets}
+          aria-valuenow={completedSets}
+          className="h-1 w-full bg-secondary"
+        >
+          <div className="h-full bg-primary transition-[width] duration-500" style={{ width: `${progress * 100}%` }} />
+        </div>
+      </PageHeader>
 
       <PageContainer className="gap-3 px-2 pb-24">
         {error && (
@@ -100,7 +133,9 @@ export function LiveWorkout({ workout, settings }: LiveWorkoutProps) {
             item={item}
             index={i}
             count={blocks.length}
+            status={statusOf(i, item.sets.length > 0 && item.sets.every((s) => s.completedAt !== null))}
             last={lastPerformances?.get(item.block.exerciseId)}
+            bestKg={bests?.get(item.block.exerciseId)}
             settings={settings}
           />
         ))}
@@ -108,6 +143,16 @@ export function LiveWorkout({ workout, settings }: LiveWorkoutProps) {
         <Button variant="outline" size="lg" onClick={() => setPickerOpen(true)}>
           <Plus /> Añadir ejercicio
         </Button>
+        {blocks.length > 0 && (
+          <Button
+            size="lg"
+            variant={allDone ? 'default' : 'secondary'}
+            className={cn('h-16 text-lg', allDone && 'animate-pulse')}
+            onClick={requestFinish}
+          >
+            <Flag /> {allDone ? '¡Todo hecho! Finalizar' : 'Finalizar entrenamiento'}
+          </Button>
+        )}
         <Button variant="ghost" className="text-destructive" onClick={() => setDiscardOpen(true)}>
           <Trash2 /> Descartar entrenamiento
         </Button>

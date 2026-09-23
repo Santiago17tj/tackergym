@@ -92,3 +92,52 @@ describe('estadísticas', () => {
     expect((await getExerciseStats('deadlift')).records.sessionCount).toBe(0)
   })
 })
+
+describe('resumen de inicio', () => {
+  // Miércoles 23 sept 2026, 18:00
+  const now = new Date(2026, 8, 23, 18).getTime()
+  const at = (d: number, h = 18) => new Date(2026, 8, d, h).getTime()
+
+  it('semana actual, racha y rutina sugerida', async () => {
+    const { summarizeHome, startOfWeek } = await import('./stats')
+    expect(new Date(startOfWeek(now)).getDate()).toBe(21) // lunes 21
+    const summary = summarizeHome(
+      [
+        { startedAt: at(21), routineId: 'push' }, // lunes
+        { startedAt: at(23, 7), routineId: 'pull' }, // miércoles
+        { startedAt: at(16), routineId: 'legs' }, // semana anterior
+        { startedAt: at(2), routineId: 'push' }, // hace 3 semanas (rompe la racha)
+      ],
+      ['push', 'pull', 'legs'],
+      now,
+    )
+    expect(summary.weekDays).toEqual([true, false, true, false, false, false, false])
+    expect(summary.workoutsThisWeek).toBe(2)
+    expect(summary.weekStreak).toBe(2)
+    expect(summary.suggestedRoutineId).toBe('legs') // la menos reciente
+  })
+
+  it('sugiere primero las rutinas nunca hechas, en orden', async () => {
+    const { summarizeHome } = await import('./stats')
+    expect(summarizeHome([{ startedAt: at(22), routineId: 'push' }], ['push', 'pull', 'legs'], now).suggestedRoutineId).toBe('pull')
+    expect(summarizeHome([], ['push', 'pull'], now)).toMatchObject({ suggestedRoutineId: 'push', weekStreak: 0 })
+  })
+
+  it('la racha cuenta desde la semana pasada si esta aún no hay entrenos', async () => {
+    const { summarizeHome } = await import('./stats')
+    expect(summarizeHome([{ startedAt: at(15), routineId: null }, { startedAt: at(8), routineId: null }], [], now).weekStreak).toBe(2)
+  })
+
+  it('mejores pesos excluyen el entrenamiento en curso', async () => {
+    const { getExerciseBests } = await import('./stats')
+    await logWorkout(Date.now() - 1000, { 'bench-press': [[80, 5]] })
+    const active = await startWorkout()
+    await addExerciseToWorkout(active.id, 'bench-press')
+    const [set] = await getSessionSets(active.id)
+    await updateSet(set.id, { weightKg: 100, reps: 1 })
+    await setSetCompleted(set.id, true)
+    const bests = await getExerciseBests(['bench-press', 'deadlift'])
+    expect(bests.get('bench-press')).toBe(80)
+    expect(bests.get('deadlift')).toBe(0)
+  })
+})

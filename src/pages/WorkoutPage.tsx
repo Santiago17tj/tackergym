@@ -9,5 +9,5 @@ export function WorkoutPage() {
   // Cargando IndexedDB (unos milisegundos): no se pinta nada para evitar parpadeos.
   if (workout === undefined || settings === undefined) return null
 
-  return workout ? <LiveWorkout workout={workout} settings={settings} /> : <StartWorkout unit={settings.weightUnit} />
+  return workout ? <LiveWorkout workout={workout} settings={settings} /> : <StartWorkout settings={settings} />
 }

@@ -10,7 +10,9 @@ import { useMemo } from 'react'
 import {
   db,
   getActiveSession,
+  getExerciseBests,
   getExerciseStats,
+  getHomeSummary,
   getLastPerformance,
   getWorkoutDetail,
   listExercisesWithHistory,
@@ -161,6 +163,16 @@ export function useRoutineLastDone(): Map<string, number> | undefined {
     }
     return map
   }, [])
+}
+
+export function useHomeSummary() {
+  return useLiveQuery(() => getHomeSummary(), [])
+}
+
+/** Mejor peso histórico por ejercicio (para detectar récords durante el entrenamiento). */
+export function useExerciseBests(exerciseIds: string[]): Map<string, number> | undefined {
+  const key = [...new Set(exerciseIds)].sort().join('|')
+  return useLiveQuery(() => getExerciseBests(key ? key.split('|') : []), [key])
 }
 
 export function useWorkoutHistory() {

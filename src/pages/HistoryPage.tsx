@@ -1,6 +1,7 @@
 import { ChevronRight, Dumbbell, History } from 'lucide-react'
 import { Link, useSearchParams } from 'react-router'
 import { EmptyState } from '@/components/EmptyState'
+import { StatTile } from '@/components/history/StatTile'
 import { PageContainer } from '@/components/layout/PageContainer'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Card } from '@/components/ui/card'
@@ -60,8 +61,24 @@ function WorkoutList() {
     months.at(-1)!.items.push(item)
   }
 
+  // Resumen del mes en curso
+  const monthStart = new Date()
+  monthStart.setDate(1)
+  monthStart.setHours(0, 0, 0, 0)
+  const thisMonth = history.filter((h) => h.session.startedAt >= monthStart.getTime())
+  const monthMinutes = thisMonth.reduce((sum, h) => sum + h.durationMs, 0)
+  const monthVolume = thisMonth.reduce((sum, h) => sum + h.volumeKg, 0)
+
   return (
     <div className="flex flex-col gap-3">
+      <section aria-label="Resumen de este mes" className="rounded-xl border bg-gradient-to-br from-primary/15 to-card p-4">
+        <h2 className="text-sm font-semibold text-muted-foreground">Este mes</h2>
+        <dl className="mt-2 grid grid-cols-3 gap-2">
+          <StatTile label="Entrenos" value={String(thisMonth.length)} className="bg-background/60" />
+          <StatTile label="Tiempo" value={formatDuration(monthMinutes)} className="bg-background/60" />
+          <StatTile label="Volumen" value={formatWeight(monthVolume, unit, 0)} className="bg-background/60" />
+        </dl>
+      </section>
       {months.map(({ month, items }) => (
         <section key={month} aria-label={month} className="flex flex-col gap-3">
           <h2 className="mt-2 text-sm font-semibold tracking-wide text-muted-foreground uppercase">{month}</h2>

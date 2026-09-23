@@ -3,6 +3,7 @@ import { NavLink, Outlet } from 'react-router'
 import { UpdatePrompt } from '@/components/pwa/UpdatePrompt'
 import { RestTimerBar } from '@/features/rest-timer/RestTimerBar'
 import { useRestTimer } from '@/features/rest-timer/store'
+import { Toaster } from '@/features/toast/Toaster'
 import { useHasActiveWorkout } from '@/hooks/useDb'
 import { useWakeLock } from '@/hooks/useWakeLock'
 import { cn } from '@/lib/utils'
@@ -38,6 +39,7 @@ export function AppShell() {
 
       <UpdatePrompt />
       <RestTimerBar />
+      <Toaster />
 
       <nav
         aria-label="Navegación principal"
@@ -52,19 +54,28 @@ export function AppShell() {
                 className={({ isActive }) =>
                   cn(
                     'flex h-full flex-col items-center justify-center gap-1 text-xs font-medium transition-colors',
-                    isActive ? 'text-primary' : 'text-muted-foreground active:text-foreground',
+                    isActive ? 'text-foreground' : 'text-muted-foreground active:text-foreground',
                   )
                 }
               >
-                <span className="relative">
-                  <Icon className="size-6" aria-hidden />
-                  {to === '/' && hasActiveWorkout && (
-                    <span className="absolute -top-0.5 -right-1 size-2.5 animate-pulse rounded-full bg-primary ring-2 ring-background">
-                      <span className="sr-only">Entrenamiento en curso</span>
+                {({ isActive }) => (
+                  <>
+                    <span
+                      className={cn(
+                        'relative flex h-8 w-14 items-center justify-center rounded-full transition-colors',
+                        isActive && 'bg-primary/20 text-primary',
+                      )}
+                    >
+                      <Icon className="size-6" aria-hidden />
+                      {to === '/' && hasActiveWorkout && (
+                        <span className="absolute top-0 right-2.5 size-2.5 animate-pulse rounded-full bg-primary ring-2 ring-background">
+                          <span className="sr-only">Entrenamiento en curso</span>
+                        </span>
+                      )}
                     </span>
-                  )}
-                </span>
-                {label}
+                    <span className={cn(isActive && 'font-bold')}>{label}</span>
+                  </>
+                )}
               </NavLink>
             </li>
           ))}

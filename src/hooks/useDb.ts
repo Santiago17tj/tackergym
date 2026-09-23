@@ -10,7 +10,11 @@ import { useMemo } from 'react'
 import {
   db,
   getActiveSession,
+  getExerciseStats,
   getLastPerformance,
+  getWorkoutDetail,
+  listExercisesWithHistory,
+  listWorkoutHistory,
   getSessionSets,
   type LastPerformance,
   type SessionExercise,
@@ -157,6 +161,22 @@ export function useRoutineLastDone(): Map<string, number> | undefined {
     }
     return map
   }, [])
+}
+
+export function useWorkoutHistory() {
+  return useLiveQuery(() => listWorkoutHistory(), [])
+}
+
+export function useWorkoutDetail(sessionId: string | undefined) {
+  return useLiveQuery(async () => (sessionId ? getWorkoutDetail(sessionId) : null), [sessionId])
+}
+
+export function useExercisesWithHistory() {
+  return useLiveQuery(() => listExercisesWithHistory(), [])
+}
+
+export function useExerciseStats(exerciseId: string | undefined) {
+  return useLiveQuery(async () => (exerciseId ? getExerciseStats(exerciseId) : null), [exerciseId])
 }
 
 // ---------------------------------------------------------------------------

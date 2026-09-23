@@ -56,6 +56,14 @@ npm run generate-pwa-assets  # regenera los iconos PNG desde public/logo.svg
 - La pantalla se mantiene encendida durante el entrenamiento (Wake Lock API).
 - Al finalizar se descartan las series sin marcar y se muestra un resumen (duración, series, volumen).
 
+## Rutinas e historial
+
+- **Rutinas**: crear, editar (series, rango de reps y descanso por ejercicio con controles −/+), reordenar,
+  duplicar y borrar. Avisa si sales del editor con cambios sin guardar.
+- **Historial**: entrenamientos agrupados por mes con duración, series y volumen; detalle serie a serie.
+- **Récords por ejercicio**: peso máximo, 1RM estimado (Epley), máximo de reps, mejor volumen por sesión,
+  totales y gráfica de progreso (peso máximo / 1RM / volumen) con tooltip táctil.
+
 ## PWA
 
 - `display: standalone`, orientación vertical, tema oscuro (`#09090b`).
@@ -68,12 +76,18 @@ Instalar: **iPhone** → Safari → Compartir → "Añadir a pantalla de inicio"
 
 ## Despliegue en Vercel
 
-Importa el repo en Vercel; `vercel.json` ya define el build (`npm run build` → `dist/`), el fallback SPA
-y las cabeceras de caché (el `sw.js` y el manifest nunca se cachean; los assets con hash son inmutables).
+1. En [vercel.com/new](https://vercel.com/new) importa este repositorio (Vercel detecta Vite).
+2. No hace falta configurar nada más: `vercel.json` ya define
+   - build `npm run build` (typecheck + tests + build) y salida `dist/`,
+   - fallback SPA para que los enlaces directos (`/historial/...`) funcionen,
+   - cabeceras de caché: `sw.js` y el manifest nunca se cachean; los assets con hash son inmutables.
+3. Cada push a `main` despliega producción; cada PR obtiene una URL de preview.
+
+La CI de GitHub Actions (`.github/workflows/ci.yml`) ejecuta lint, typecheck, tests y build en cada PR.
 
 ## Roadmap
 
 - [x] **Fase 1** — Proyecto base, Tailwind, UI móvil y configuración PWA.
 - [x] **Fase 2** — Esquema Dexie, seed de ejercicios y rutinas, ajustes kg/lb, backup/restore JSON.
 - [x] **Fase 3** — Entrenamiento en vivo y temporizador de descanso.
-- [ ] **Fase 4** — Rutinas, historial/récords y build final para Vercel.
+- [x] **Fase 4** — Rutinas, historial/récords y build final para Vercel.

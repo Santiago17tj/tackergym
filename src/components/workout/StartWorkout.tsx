@@ -57,7 +57,7 @@ export function StartWorkout({ unit }: { unit: WeightUnit }) {
             <dl className="mt-3 grid grid-cols-3 gap-2 text-center">
               <Stat label="Duración" value={formatClock(state.summary.durationMs)} />
               <Stat label="Series" value={String(state.summary.completedSets)} />
-              <Stat label="Volumen" value={formatWeight(state.summary.volumeKg, unit)} />
+              <Stat label="Volumen" value={formatWeight(state.summary.volumeKg, unit, 0)} />
             </dl>
           </Card>
         )}

@@ -32,3 +32,32 @@ export function formatRelativeDay(timestamp: number, now = Date.now()): string {
   if (days > -30) return relative.format(Math.round(days / 7), 'week')
   return relative.format(Math.round(days / 30), 'month')
 }
+
+const dayFormat = new Intl.DateTimeFormat('es', { weekday: 'short', day: 'numeric', month: 'short' })
+const timeFormat = new Intl.DateTimeFormat('es', { hour: '2-digit', minute: '2-digit' })
+const monthFormat = new Intl.DateTimeFormat('es', { month: 'long', year: 'numeric' })
+const shortDateFormat = new Intl.DateTimeFormat('es', { day: 'numeric', month: 'short' })
+
+/** "mar, 23 sept · 18:04" */
+export function formatDayTime(timestamp: number): string {
+  return `${dayFormat.format(timestamp)} · ${timeFormat.format(timestamp)}`
+}
+
+/** "Septiembre de 2026" */
+export function formatMonth(timestamp: number): string {
+  const text = monthFormat.format(timestamp)
+  return text.charAt(0).toUpperCase() + text.slice(1)
+}
+
+/** "23 sept" */
+export function formatShortDate(timestamp: number): string {
+  return shortDateFormat.format(timestamp)
+}
+
+/** 3_725_000 → "1 h 2 min"; 540_000 → "9 min" */
+export function formatDuration(ms: number): string {
+  const minutes = Math.max(0, Math.round(ms / 60_000))
+  const h = Math.floor(minutes / 60)
+  const m = minutes % 60
+  return h > 0 ? `${h} h ${m} min` : `${m} min`
+}

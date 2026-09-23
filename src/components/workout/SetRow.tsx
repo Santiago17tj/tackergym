@@ -4,7 +4,7 @@ import { NumericInput } from '@/components/ui/input'
 import { setSetCompleted, updateSet, WorkoutError, type WeightUnit, type WorkoutSet } from '@/db'
 import type { LastPerformance } from '@/db/history'
 import { unlockAudio, vibrate } from '@/lib/alerts'
-import { parseDecimal, toDisplayWeight, toStoredWeight } from '@/lib/units'
+import { formatNumber, parseDecimal, toDisplayWeight, toStoredWeight } from '@/lib/units'
 import { cn } from '@/lib/utils'
 
 /** Columnas compartidas por la cabecera y las filas de la tabla de series. */
@@ -74,7 +74,7 @@ export const SetRow = memo(function SetRow({ set, previous, unit, repsPlaceholde
 
   const previousText =
     previous && previous.reps !== null
-      ? `${previous.weightKg ? toDisplayWeight(previous.weightKg, unit) : 0} × ${previous.reps}`
+      ? `${formatNumber(toDisplayWeight(previous.weightKg ?? 0, unit))} × ${previous.reps}`
       : '—'
 
   return (

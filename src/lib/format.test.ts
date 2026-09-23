@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatClock, formatRelativeDay, formatRepRange, formatRest } from './format'
+import { formatClock, formatDuration, formatMonth, formatRelativeDay, formatRepRange, formatRest } from './format'
 
 describe('formato', () => {
   it('reloj', () => {
@@ -26,5 +26,11 @@ describe('formato', () => {
     expect(formatRelativeDay(new Date(2026, 8, 23, 7).getTime(), now)).toBe('hoy')
     expect(formatRelativeDay(new Date(2026, 8, 22, 23).getTime(), now)).toBe('ayer')
     expect(formatRelativeDay(new Date(2026, 8, 20).getTime(), now)).toBe('hace 3 días')
+  })
+
+  it('duración y mes', () => {
+    expect(formatDuration(540_000)).toBe('9 min')
+    expect(formatDuration(3_725_000)).toBe('1 h 2 min')
+    expect(formatMonth(new Date(2026, 8, 23).getTime())).toBe('Septiembre de 2026')
   })
 })

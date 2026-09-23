@@ -24,8 +24,18 @@ export function parseDecimal(input: string): number | null {
   return Number.isFinite(value) ? value : null
 }
 
-const numberFormat = new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 })
+const numberFormats = new Map<number, Intl.NumberFormat>()
 
-export function formatWeight(kg: number, unit: WeightUnit): string {
-  return `${numberFormat.format(toDisplayWeight(kg, unit))} ${unit}`
+/** Número con el separador decimal del idioma del dispositivo (82,5 / 82.5). */
+export function formatNumber(value: number, maxDecimals = 2): string {
+  let format = numberFormats.get(maxDecimals)
+  if (!format) {
+    format = new Intl.NumberFormat(undefined, { maximumFractionDigits: maxDecimals })
+    numberFormats.set(maxDecimals, format)
+  }
+  return format.format(value)
+}
+
+export function formatWeight(kg: number, unit: WeightUnit, maxDecimals = 2): string {
+  return `${formatNumber(toDisplayWeight(kg, unit), maxDecimals)} ${unit}`
 }

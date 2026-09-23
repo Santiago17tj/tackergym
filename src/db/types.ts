@@ -108,7 +108,20 @@ export interface AppSettings {
   restVibration: boolean
   /** Color de acento de la interfaz (#rrggbb). */
   accentColor: string
+  /** Cómo quiere que la app le llame (vacío = sin nombre). */
+  displayName: string
+  /** Trato preferido: femenino, masculino o neutro. */
+  addressForm: AddressForm
+  /** Días de entreno para los recordatorios (0 = lunes … 6 = domingo). */
+  trainingDays: number[]
+  /** Hora del recordatorio, "HH:MM". */
+  reminderTime: string
+  /** Ya completó (o saltó) la bienvenida inicial. */
+  onboarded: boolean
 }
+
+export const ADDRESS_FORMS = ['f', 'm', 'n'] as const
+export type AddressForm = (typeof ADDRESS_FORMS)[number]
 
 export const DEFAULT_SETTINGS: AppSettings = {
   weightUnit: 'kg',
@@ -117,6 +130,11 @@ export const DEFAULT_SETTINGS: AppSettings = {
   restSound: true,
   restVibration: true,
   accentColor: '#a3e635',
+  displayName: '',
+  addressForm: 'n',
+  trainingDays: [0, 2, 4],
+  reminderTime: '18:00',
+  onboarded: false,
 }
 
 export const REST_PRESETS = [30, 60, 90, 120] as const

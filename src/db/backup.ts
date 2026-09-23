@@ -1,6 +1,8 @@
 import { APP_NAME } from '@/config/app'
+import { shareOrDownloadFile, type DeliverResult } from '@/lib/share'
 import { db, DB_SCHEMA_VERSION } from './db'
 import {
+  ADDRESS_FORMS,
   EQUIPMENT,
   MUSCLE_GROUPS,
   WEIGHT_UNITS,
@@ -66,56 +68,19 @@ export function backupFileName(date = new Date()): string {
   return `${BACKUP_FORMAT}_${stamp}.json`
 }
 
-export type ExportResult =
-  | { status: 'shared' | 'downloaded' | 'cancelled' }
-  /** Safari exige un gesto "reciente" para compartir: hay que volver a tocar. */
-  | { status: 'needs-tap'; file: File }
+export type ExportResult = DeliverResult
 
 export async function createBackupFile(): Promise<File> {
   const backup = await createBackup()
   return new File([JSON.stringify(backup, null, 2)], backupFileName(), { type: 'application/json' })
 }
 
-function canShareFile(file: File): boolean {
-  const isTouchDevice = window.matchMedia('(pointer: coarse)').matches
-  return isTouchDevice && typeof navigator.canShare === 'function' && navigator.canShare({ files: [file] })
-}
-
-/**
- * Entrega un archivo ya generado: hoja de compartir nativa en móviles
- * ("Guardar en Archivos", Drive, WhatsApp…) o descarga directa.
- * Debe llamarse dentro de un gesto del usuario.
- */
-export async function deliverBackupFile(file: File): Promise<ExportResult> {
-  if (canShareFile(file)) {
-    try {
-      await navigator.share({ files: [file], title: file.name })
-      return { status: 'shared' }
-    } catch (error) {
-      if (error instanceof DOMException && error.name === 'AbortError') return { status: 'cancelled' }
-      if (error instanceof DOMException && error.name === 'NotAllowedError') return { status: 'needs-tap', file }
-      // Cualquier otro fallo: se intenta la descarga clásica.
-    }
-  }
-  downloadFile(file)
-  return { status: 'downloaded' }
-}
+/** Entrega un backup ya generado (compartir en móvil o descarga). */
+export const deliverBackupFile = shareOrDownloadFile
 
 /** Genera el backup y lo entrega al usuario. */
 export async function exportBackup(): Promise<ExportResult> {
-  return deliverBackupFile(await createBackupFile())
-}
-
-function downloadFile(file: File) {
-  const name = file.name
-  const url = URL.createObjectURL(file)
-  const link = document.createElement('a')
-  link.href = url
-  link.download = name
-  document.body.append(link)
-  link.click()
-  link.remove()
-  setTimeout(() => URL.revokeObjectURL(url), 10_000)
+  return shareOrDownloadFile(await createBackupFile())
 }
 
 // ---------------------------------------------------------------------------
@@ -233,6 +198,12 @@ const guards: { [K in keyof BackupData]: Guard<BackupData[K][number]> } = {
     if (v.key === 'defaultRestSeconds') return isNumber(v.value) && v.value >= 0
     if (v.key === 'autoStartRest' || v.key === 'restSound' || v.key === 'restVibration') return isBoolean(v.value)
     if (v.key === 'accentColor') return typeof v.value === 'string' && /^#[0-9a-f]{6}$/i.test(v.value)
+    if (v.key === 'displayName') return typeof v.value === 'string' && v.value.length <= 40
+    if (v.key === 'addressForm') return oneOf(ADDRESS_FORMS)(v.value)
+    if (v.key === 'trainingDays')
+      return Array.isArray(v.value) && v.value.every((d) => Number.isInteger(d) && d >= 0 && d <= 6)
+    if (v.key === 'reminderTime') return typeof v.value === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(v.value)
+    if (v.key === 'onboarded') return isBoolean(v.value)
     return false
   },
 }

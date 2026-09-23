@@ -22,7 +22,8 @@ import { vibrate } from '@/lib/alerts'
 import { formatRepRange, formatRest } from '@/lib/format'
 import { formatWeight } from '@/lib/units'
 import { cn } from '@/lib/utils'
-import { SET_GRID, SetRow } from './SetRow'
+import { SetEditor } from './SetEditor'
+import { SetRow } from './SetRow'
 
 export type BlockStatus = 'done' | 'current' | 'upcoming'
 
@@ -52,6 +53,8 @@ export const ExerciseBlock = memo(function ExerciseBlock({
   const [menuOpen, setMenuOpen] = useState(false)
   const [confirmRemove, setConfirmRemove] = useState(false)
   const [expanded, setExpanded] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const onEdit = useCallback((set: WorkoutSet) => setEditingId(set.id), [])
   /** Mayor peso ya celebrado en esta sesión, para no repetir el aviso de récord. */
   const celebratedRef = useRef(0)
 
@@ -61,6 +64,7 @@ export const ExerciseBlock = memo(function ExerciseBlock({
   const doneCount = sets.filter((s) => s.completedAt !== null).length
   const autoStartRest = settings.autoStartRest
   const unit = settings.weightUnit
+  const displayName = settings.displayName.trim()
   const nextSetId = status === 'current' ? sets.find((s) => s.completedAt === null)?.id : undefined
   const best = bestKg ?? 0
 
@@ -70,14 +74,14 @@ export const ExerciseBlock = memo(function ExerciseBlock({
       if (best > 0 && weight > best && weight > celebratedRef.current) {
         celebratedRef.current = weight
         vibrate([60, 40, 120])
-        toast.show('Récord personal', {
+        toast.show(displayName ? `Nuevo récord, ${displayName}` : 'Nuevo récord', {
           description: `${name}: ${formatWeight(weight, unit)} (antes ${formatWeight(best, unit)})`,
           tone: 'record',
         })
       }
       if (autoStartRest) restTimer.start(restSeconds, name)
     },
-    [autoStartRest, restSeconds, name, best, unit],
+    [autoStartRest, restSeconds, name, best, unit, displayName],
   )
 
   const closeMenuAnd = (action: () => unknown) => () => {
@@ -101,7 +105,7 @@ export const ExerciseBlock = memo(function ExerciseBlock({
         >
           <CheckCircle2 className="size-7 shrink-0 text-success" aria-hidden />
           <span className="min-w-0 flex-1">
-            <span className="block truncate font-display text-lg font-bold uppercase">{name}</span>
+            <span className="block truncate font-semibold">{name}</span>
             <span className="block truncate text-sm text-muted-foreground">
               {doneCount} series · máx. {formatWeight(maxKg, unit)}
               {hasRecord && <span className="font-semibold text-primary"> · récord</span>}
@@ -128,7 +132,7 @@ export const ExerciseBlock = memo(function ExerciseBlock({
             )}
             {status === 'done' && <CheckCircle2 className="size-5 text-success" aria-label="Completado" />}
           </div>
-          <h2 className="mt-1 font-display text-2xl leading-tight font-bold uppercase">{name}</h2>
+          <h2 className="mt-1 text-lg leading-tight font-bold">{name}</h2>
           <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
             {exercise && <Chip>{MUSCLE_GROUP_LABELS[exercise.muscleGroup]}</Chip>}
             {repRange && <Chip>{repRange} reps</Chip>}
@@ -153,15 +157,6 @@ export const ExerciseBlock = memo(function ExerciseBlock({
       </div>
 
       <div className="px-2">
-        <div
-          className={`${SET_GRID} px-1 pb-1 text-center text-[11px] font-semibold tracking-wide text-muted-foreground uppercase`}
-        >
-          <span>Serie</span>
-          <span>Última vez</span>
-          <span>{unit}</span>
-          <span>Reps</span>
-          <span aria-hidden>✓</span>
-        </div>
         <div className="flex flex-col gap-1">
           {sets.map((set, i) => (
             <SetRow
@@ -169,14 +164,25 @@ export const ExerciseBlock = memo(function ExerciseBlock({
               set={set}
               previous={last?.sets[i]}
               unit={unit}
-              repsPlaceholder={repRange}
+              repsTarget={repRange}
               isRecord={isRecordSet(set)}
               isNext={set.id === nextSetId}
+              onEdit={onEdit}
               onCompleted={onCompleted}
             />
           ))}
         </div>
       </div>
+
+      <SetEditor
+        exerciseName={name}
+        set={sets.find((s) => s.id === editingId) ?? null}
+        previous={last?.sets[sets.findIndex((s) => s.id === editingId)]}
+        unit={unit}
+        repsTarget={repRange}
+        onClose={() => setEditingId(null)}
+        onCompleted={onCompleted}
+      />
 
       <div className="grid grid-cols-2 gap-2 p-3">
         <Button

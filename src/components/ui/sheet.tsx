@@ -1,6 +1,7 @@
 import { X } from 'lucide-react'
 import { useEffect, useRef, type ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
+import { useScrollLock } from '@/hooks/useScrollLock'
 import { cn } from '@/lib/utils'
 
 type SheetProps = {
@@ -16,6 +17,7 @@ type SheetProps = {
 /** Hoja inferior (bottom sheet) sobre <dialog> nativo: al alcance del pulgar. */
 export function Sheet({ open, onClose, title, children, tall, className }: SheetProps) {
   const ref = useRef<HTMLDialogElement>(null)
+  useScrollLock(open)
 
   useEffect(() => {
     const dialog = ref.current

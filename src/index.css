@@ -120,24 +120,27 @@
     -webkit-tap-highlight-color: transparent;
   }
 
-  html,
-  body {
-    /* Evita el "rebote"/pull-to-refresh que recarga la app a mitad de serie */
-    overscroll-behavior: none;
+  html {
+    /* Evita el pull-to-refresh que recarga la app a mitad de serie */
+    overscroll-behavior-y: none;
   }
 
+  /*
+   * Ni html ni body llevan `overflow`: lo que se pone en body se traslada al
+   * viewport y Safari (iOS) puede dejar de hacer scroll. El desborde
+   * horizontal se recorta en #root con `clip`, que no crea un contenedor de
+   * scroll (la cabecera sticky y scrollIntoView siguen funcionando).
+   */
   body {
     @apply bg-background text-foreground antialiased;
     min-height: 100dvh;
-    /* clip (no hidden): evita el scroll horizontal sin convertir el body en un
-       contenedor de scroll, que rompería la cabecera sticky y scrollIntoView. */
-    overflow-x: clip;
     touch-action: manipulation; /* sin retardo ni zoom por doble toque */
   }
 
   #root {
     min-height: 100dvh;
     isolation: isolate;
+    overflow-x: clip;
   }
 
   /* iOS hace zoom al enfocar inputs con font-size < 16px */
@@ -170,8 +173,8 @@
   }
 }
 
-/* Bloquea el scroll de fondo mientras hay un diálogo/hoja abierta (iOS) */
-html:has(dialog[open]) {
+/* Scroll de fondo bloqueado mientras hay un diálogo/hoja abierta (clase puesta por useScrollLock) */
+html.scroll-locked {
   overflow: hidden;
 }
 

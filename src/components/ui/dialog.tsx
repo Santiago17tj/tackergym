@@ -1,5 +1,6 @@
 import { useEffect, useRef, type ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
+import { useScrollLock } from '@/hooks/useScrollLock'
 
 type ConfirmDialogProps = {
   open: boolean
@@ -29,6 +30,7 @@ export function ConfirmDialog({
   onCancel,
 }: ConfirmDialogProps) {
   const ref = useRef<HTMLDialogElement>(null)
+  useScrollLock(open)
 
   useEffect(() => {
     const dialog = ref.current

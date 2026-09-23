@@ -78,7 +78,7 @@ export function RoutinesPage() {
             <Card key={routine.id} className="overflow-hidden">
               <div className="flex items-start gap-2 p-4 pb-3">
                 <div className="min-w-0 flex-1">
-                  <h2 className="truncate text-xl font-bold">{routine.name}</h2>
+                  <h2 className="truncate font-display text-3xl leading-tight font-bold uppercase">{routine.name}</h2>
                   {routine.description && (
                     <p className="truncate text-sm text-muted-foreground">{routine.description}</p>
                   )}

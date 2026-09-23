@@ -71,12 +71,12 @@ function WorkoutList() {
 
   return (
     <div className="flex flex-col gap-3">
-      <section aria-label="Resumen de este mes" className="rounded-xl border bg-gradient-to-br from-primary/15 to-card p-4">
-        <h2 className="text-sm font-semibold text-muted-foreground">Este mes</h2>
+      <section aria-label="Resumen de este mes">
+        <h2 className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">Este mes</h2>
         <dl className="mt-2 grid grid-cols-3 gap-2">
-          <StatTile label="Entrenos" value={String(thisMonth.length)} className="bg-background/60" />
-          <StatTile label="Tiempo" value={formatDuration(monthMinutes)} className="bg-background/60" />
-          <StatTile label="Volumen" value={formatWeight(monthVolume, unit, 0)} className="bg-background/60" />
+          <StatTile label="Entrenos" value={String(thisMonth.length)} />
+          <StatTile label="Tiempo" value={formatDuration(monthMinutes)} />
+          <StatTile label="Volumen" value={formatWeight(monthVolume, unit, 0)} />
         </dl>
       </section>
       {months.map(({ month, items }) => (
@@ -87,7 +87,7 @@ function WorkoutList() {
               <Card className="flex items-center gap-3 p-4 active:bg-accent/50">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-baseline justify-between gap-2">
-                    <h3 className="truncate font-bold">{item.session.name}</h3>
+                    <h3 className="truncate font-display text-xl font-bold uppercase">{item.session.name}</h3>
                     <span className="shrink-0 text-xs text-muted-foreground">{formatDayTime(item.session.startedAt)}</span>
                   </div>
                   <p className="mt-1 truncate text-sm text-muted-foreground">{item.exerciseNames.join(' · ')}</p>

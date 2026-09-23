@@ -1,11 +1,13 @@
 import { Dumbbell, History, ListChecks, Settings } from 'lucide-react'
+import { useEffect } from 'react'
 import { NavLink, Outlet } from 'react-router'
 import { UpdatePrompt } from '@/components/pwa/UpdatePrompt'
 import { RestTimerBar } from '@/features/rest-timer/RestTimerBar'
 import { useRestTimer } from '@/features/rest-timer/store'
 import { Toaster } from '@/features/toast/Toaster'
-import { useHasActiveWorkout } from '@/hooks/useDb'
+import { useHasActiveWorkout, useSettings } from '@/hooks/useDb'
 import { useWakeLock } from '@/hooks/useWakeLock'
+import { applyAccent } from '@/lib/accent'
 import { cn } from '@/lib/utils'
 
 const NAV_ITEMS = [
@@ -24,6 +26,11 @@ export function AppShell() {
   const restActive = useRestTimer() !== null
   // Pantalla encendida durante todo el entrenamiento, aunque se cambie de pestaña.
   useWakeLock(hasActiveWorkout)
+
+  const accentColor = useSettings()?.accentColor
+  useEffect(() => {
+    if (accentColor) applyAccent(accentColor)
+  }, [accentColor])
 
   return (
     <div className="flex min-h-dvh flex-col px-safe">
@@ -54,18 +61,15 @@ export function AppShell() {
                 className={({ isActive }) =>
                   cn(
                     'flex h-full flex-col items-center justify-center gap-1 text-xs font-medium transition-colors',
-                    isActive ? 'text-foreground' : 'text-muted-foreground active:text-foreground',
+                    'relative',
+                    isActive ? 'text-primary' : 'text-muted-foreground active:text-foreground',
                   )
                 }
               >
                 {({ isActive }) => (
                   <>
-                    <span
-                      className={cn(
-                        'relative flex h-8 w-14 items-center justify-center rounded-full transition-colors',
-                        isActive && 'bg-primary/20 text-primary',
-                      )}
-                    >
+                    {isActive && <span aria-hidden className="absolute inset-x-5 top-0 h-0.5 bg-primary" />}
+                    <span className="relative flex h-8 w-14 items-center justify-center">
                       <Icon className="size-6" aria-hidden />
                       {to === '/' && hasActiveWorkout && (
                         <span className="absolute top-0 right-2.5 size-2.5 animate-pulse rounded-full bg-primary ring-2 ring-background">
@@ -73,7 +77,7 @@ export function AppShell() {
                         </span>
                       )}
                     </span>
-                    <span className={cn(isActive && 'font-bold')}>{label}</span>
+                    <span className={cn('tracking-wide uppercase', isActive && 'font-bold')}>{label}</span>
                   </>
                 )}
               </NavLink>

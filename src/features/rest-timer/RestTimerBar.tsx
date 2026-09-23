@@ -10,7 +10,7 @@ import { restTimer, useRestTimer } from './store'
 
 /** Si el aviso llega tarde (app en segundo plano), no suena pasado este margen. */
 const LATE_ALERT_TOLERANCE_MS = 30_000
-/** Tiempo que se muestra "¡Descanso terminado!" antes de ocultarse. */
+/** Tiempo que se muestra "Descanso terminado" antes de ocultarse. */
 const FINISHED_VISIBLE_MS = 6_000
 
 /**
@@ -71,7 +71,7 @@ export function RestTimerBar() {
     >
       <div
         className={cn(
-          'relative overflow-hidden rounded-2xl border shadow-2xl shadow-black/60 transition-colors',
+          'relative overflow-hidden rounded-lg border shadow-2xl shadow-black/60 transition-colors',
           finished ? 'border-primary bg-primary text-primary-foreground' : 'bg-card',
         )}
       >
@@ -84,14 +84,14 @@ export function RestTimerBar() {
             aria-label="Opciones de descanso"
           >
             {finished ? (
-              <span className="flex items-center gap-2 pl-2 text-xl font-extrabold">
-                <BellRing className="size-6 animate-bounce" /> ¡A por la siguiente!
+              <span className="flex items-center gap-2 pl-2 font-display text-2xl font-bold uppercase">
+                <BellRing className="size-6" /> Descanso terminado
               </span>
             ) : (
               <>
                 <ProgressRing progress={progress} />
                 <span className="flex min-w-0 flex-col">
-                  <span className="tabular text-3xl leading-none font-extrabold">{formatClock(remaining)}</span>
+                  <span className="tabular font-display text-4xl leading-none font-bold">{formatClock(remaining)}</span>
                   <span className="mt-1 max-w-full truncate text-xs text-muted-foreground">
                     Descanso{timer.label ? ` · ${timer.label}` : ''}
                   </span>
@@ -182,7 +182,7 @@ function TimerButton({
       aria-label={label}
       onClick={onClick}
       className={cn(
-        'flex size-12 shrink-0 items-center justify-center gap-0.5 rounded-xl bg-secondary font-semibold active:scale-95 [&_svg]:size-4',
+        'flex size-12 shrink-0 items-center justify-center gap-0.5 rounded-md bg-secondary font-semibold active:scale-95 [&_svg]:size-4',
         className,
       )}
     >

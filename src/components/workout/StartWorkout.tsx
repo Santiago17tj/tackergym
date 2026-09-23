@@ -1,4 +1,4 @@
-import { Clock, Dumbbell, Flame, Layers, Loader2, Play, Plus, Timer, TrendingUp, Trophy, X } from 'lucide-react'
+import { Loader2, Play, Plus, X } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router'
 import { EmptyState } from '@/components/EmptyState'
@@ -6,7 +6,6 @@ import { PageContainer } from '@/components/layout/PageContainer'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { Chip } from '@/components/ui/chip'
 import { startWorkout, WorkoutError, type AppSettings, type WorkoutSummary } from '@/db'
 import { useHomeSummary, useRoutinesWithExercises, type RoutineWithExercises } from '@/hooks/useDb'
 import { formatClock, formatRelativeDay } from '@/lib/format'
@@ -20,15 +19,19 @@ const WEEKDAYS = ['L', 'M', 'X', 'J', 'V', 'S', 'D']
 const WEEKDAY_NAMES = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo']
 const WELCOME_KEY = 'welcome-dismissed'
 
-function greeting(date = new Date()): string {
-  const h = date.getHours()
-  if (h < 6) return 'Buenas noches'
-  if (h < 13) return 'Buenos días'
-  if (h < 20) return 'Buenas tardes'
-  return 'Buenas noches'
+const titleFormat = new Intl.DateTimeFormat('es', { weekday: 'long', day: 'numeric' })
+const monthFormat = new Intl.DateTimeFormat('es', { month: 'long' })
+
+/** Semana ISO (lunes a domingo), como en un diario de entrenamiento. */
+function isoWeek(date = new Date()): number {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()))
+  const day = d.getUTCDay() || 7
+  d.setUTCDate(d.getUTCDate() + 4 - day)
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1))
+  return Math.ceil(((d.getTime() - yearStart.getTime()) / 86_400_000 + 1) / 7)
 }
 
-const todayFormat = new Intl.DateTimeFormat('es', { weekday: 'long', day: 'numeric', month: 'long' })
+const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1)
 
 function readWelcomeDismissed(): boolean {
   try {
@@ -72,7 +75,7 @@ export function StartWorkout({ settings }: { settings: AppSettings }) {
     }
   }
 
-  const today = todayFormat.format(new Date())
+  const now = new Date()
   const suggested = loaded ? routines.find((r) => r.id === home.suggestedRoutineId) : undefined
   const others = loaded ? routines.filter((r) => r.id !== suggested?.id) : []
   const todayIndex = (new Date().getDay() + 6) % 7
@@ -80,10 +83,13 @@ export function StartWorkout({ settings }: { settings: AppSettings }) {
 
   return (
     <>
-      <PageHeader title={greeting()} subtitle={today.charAt(0).toUpperCase() + today.slice(1)} />
+      <PageHeader
+        title={titleFormat.format(now).replace(',', '')}
+        subtitle={`${capitalize(monthFormat.format(now))} · semana ${isoWeek(now)}`}
+      />
       <PageContainer className="gap-5">
         {state?.summary && (
-          <Card className="relative overflow-hidden border-primary/50 bg-gradient-to-br from-primary/20 to-card p-4">
+          <Card className="relative border-t-2 border-t-primary p-4">
             <button
               type="button"
               aria-label="Cerrar"
@@ -92,9 +98,7 @@ export function StartWorkout({ settings }: { settings: AppSettings }) {
             >
               <X className="size-5" />
             </button>
-            <p className="flex items-center gap-2 text-lg font-bold">
-              <Trophy className="size-5 text-primary" /> ¡Entrenamiento guardado!
-            </p>
+            <p className="font-display text-xl font-bold tracking-wide uppercase">Entrenamiento guardado</p>
             <p className="mt-1 text-sm text-muted-foreground">{state.name}</p>
             <dl className="mt-3 grid grid-cols-3 gap-2 text-center">
               <SummaryStat label="Duración" value={formatClock(state.summary.durationMs)} />
@@ -113,15 +117,25 @@ export function StartWorkout({ settings }: { settings: AppSettings }) {
         {showWelcome && <WelcomeCard onDismiss={dismissWelcome} />}
 
         {loaded && (
-          <Card className="p-4">
-            <div className="flex items-center justify-between gap-2">
-              <h2 className="font-semibold">Esta semana</h2>
-              <span className="flex items-center gap-1 text-sm text-muted-foreground">
-                <Flame className={cn('size-4', home.weekStreak > 0 ? 'text-primary' : 'text-muted-foreground')} />
-                {home.weekStreak > 0
-                  ? `Racha: ${home.weekStreak} ${home.weekStreak === 1 ? 'semana' : 'semanas'}`
-                  : 'Empieza tu racha'}
-              </span>
+          <section aria-labelledby="week-title">
+            <div className="flex items-end justify-between gap-4">
+              <h2 id="week-title" className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+                Esta semana
+              </h2>
+              <dl className="flex gap-5 text-right">
+                <div className="flex flex-row-reverse items-baseline gap-1.5">
+                  <dt className="text-xs text-muted-foreground">
+                    {home.workoutsThisWeek === 1 ? 'entreno' : 'entrenos'}
+                  </dt>
+                  <dd className="tabular font-display text-3xl leading-none font-bold">{home.workoutsThisWeek}</dd>
+                </div>
+                <div className="flex flex-row-reverse items-baseline gap-1.5">
+                  <dt className="text-xs text-muted-foreground">
+                    {home.weekStreak === 1 ? 'semana seguida' : 'semanas seguidas'}
+                  </dt>
+                  <dd className="tabular font-display text-3xl leading-none font-bold">{home.weekStreak}</dd>
+                </div>
+              </dl>
             </div>
             <ol className="mt-3 grid grid-cols-7 gap-1.5" aria-label="Días entrenados esta semana">
               {WEEKDAYS.map((day, i) => {
@@ -132,29 +146,26 @@ export function StartWorkout({ settings }: { settings: AppSettings }) {
                     <span
                       aria-hidden
                       className={cn(
-                        'flex size-9 items-center justify-center rounded-full text-sm font-bold',
-                        trained ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground',
-                        isToday && !trained && 'ring-2 ring-primary/70',
+                        'block h-8 w-full rounded-sm',
+                        trained ? 'bg-primary' : 'bg-secondary',
+                        isToday && !trained && 'outline-2 outline-offset-1 outline-primary',
                       )}
+                    />
+                    <span
+                      aria-hidden
+                      className={cn('text-[11px] font-semibold', isToday ? 'text-foreground' : 'text-muted-foreground')}
                     >
-                      {trained ? <Dumbbell className="size-4" /> : day}
-                    </span>
-                    <span className={cn('text-[11px]', isToday ? 'font-bold text-foreground' : 'text-muted-foreground')}>
-                      {isToday ? 'Hoy' : day}
+                      {day}
                     </span>
                     <span className="sr-only">
-                      {WEEKDAY_NAMES[i]}: {trained ? 'entrenado' : 'sin entrenar'}
+                      {WEEKDAY_NAMES[i]}
+                      {isToday ? ' (hoy)' : ''}: {trained ? 'entrenado' : 'sin entrenar'}
                     </span>
                   </li>
                 )
               })}
             </ol>
-            <p className="mt-3 text-sm text-muted-foreground">
-              {home.workoutsThisWeek === 0
-                ? 'Aún no has entrenado esta semana.'
-                : `${home.workoutsThisWeek} ${home.workoutsThisWeek === 1 ? 'entrenamiento' : 'entrenamientos'} esta semana. ¡Sigue así!`}
-            </p>
-          </Card>
+          </section>
         )}
 
         {loaded && suggested && (
@@ -178,7 +189,7 @@ export function StartWorkout({ settings }: { settings: AppSettings }) {
 
         {loaded && others.length > 0 && (
           <section aria-labelledby="other-routines" className="flex flex-col gap-2">
-            <h2 id="other-routines" className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">
+            <h2 id="other-routines" className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
               Otras rutinas
             </h2>
             <Card className="divide-y overflow-hidden">
@@ -187,7 +198,7 @@ export function StartWorkout({ settings }: { settings: AppSettings }) {
                 return (
                   <div key={routine.id} className="flex items-center gap-3 p-3 pl-4">
                     <div className="min-w-0 flex-1">
-                      <p className="truncate font-semibold">{routine.name}</p>
+                      <p className="truncate font-display text-xl font-bold uppercase">{routine.name}</p>
                       <p className="truncate text-xs text-muted-foreground">
                         {routineMuscleGroups(routine.exercises).slice(0, 3).join(' · ') || 'Sin ejercicios'}
                         {' · '}
@@ -197,7 +208,7 @@ export function StartWorkout({ settings }: { settings: AppSettings }) {
                     <Button
                       size="icon"
                       variant="secondary"
-                      className="rounded-full"
+                      className="rounded-md"
                       aria-label={`Empezar ${routine.name}`}
                       disabled={starting !== null || routine.exercises.length === 0}
                       onClick={() => start(routine.id)}
@@ -247,35 +258,22 @@ function SuggestedCard({
   const groups = routineMuscleGroups(routine.exercises)
   const totalSets = routine.exercises.reduce((sum, e) => sum + e.targetSets, 0)
   return (
-    <section
-      aria-labelledby="suggested-title"
-      className="relative overflow-hidden rounded-2xl border border-primary/40 bg-gradient-to-br from-primary/25 via-card to-card p-5"
-    >
-      <Dumbbell aria-hidden className="absolute -top-4 -right-6 size-32 rotate-[-30deg] text-primary/10" />
-      <p className="text-xs font-bold tracking-widest text-primary uppercase">Hoy toca</p>
-      <h2 id="suggested-title" className="relative mt-1 text-3xl leading-tight font-extrabold tracking-tight">
+    <section aria-labelledby="suggested-title" className="border-y py-5">
+      <p className="text-xs font-semibold tracking-wider text-primary uppercase">
+        Siguiente · {lastDone ? `última vez ${formatRelativeDay(lastDone)}` : 'aún sin hacer'}
+      </p>
+      <h2 id="suggested-title" className="mt-1 font-display text-5xl leading-[0.95] font-bold uppercase">
         {routine.name}
       </h2>
-      {groups.length > 0 && (
-        <div className="relative mt-3 flex flex-wrap gap-1.5">
-          {groups.map((g) => (
-            <Chip key={g} className="bg-background/70">
-              {g}
-            </Chip>
-          ))}
-        </div>
-      )}
-      <dl className="relative mt-4 flex flex-wrap gap-x-4 gap-y-1 text-sm">
-        <Meta icon={<Layers />} label="Ejercicios" value={`${routine.exercises.length} ejercicios`} />
-        <Meta icon={<TrendingUp />} label="Series" value={`${totalSets} series`} />
-        <Meta icon={<Clock />} label="Duración estimada" value={`~${minutes} min`} />
+      {groups.length > 0 && <p className="mt-2 text-sm text-muted-foreground">{groups.join(' / ')}</p>}
+      <dl className="mt-4 grid grid-cols-3 divide-x border-y">
+        <Figure label="ejercicios" value={routine.exercises.length} />
+        <Figure label="series" value={totalSets} />
+        <Figure label="min aprox." value={minutes} />
       </dl>
-      <p className="relative mt-2 text-xs text-muted-foreground">
-        {lastDone ? `Última vez ${formatRelativeDay(lastDone)}` : 'Aún no la has hecho'}
-      </p>
       <Button
         size="lg"
-        className="relative mt-4 h-16 w-full text-xl"
+        className="mt-4 h-16 w-full text-2xl"
         onClick={onStart}
         disabled={disabled || routine.exercises.length === 0}
       >
@@ -285,50 +283,45 @@ function SuggestedCard({
   )
 }
 
-function Meta({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+function Figure({ label, value }: { label: string; value: number }) {
   return (
-    <div className="flex items-center gap-1.5 [&_svg]:size-4 [&_svg]:text-primary">
-      {icon}
-      <dt className="sr-only">{label}</dt>
-      <dd className="font-medium">{value}</dd>
+    <div className="flex flex-col-reverse px-3 py-2 first:pl-0">
+      <dt className="text-xs text-muted-foreground">{label}</dt>
+      <dd className="tabular font-display text-3xl leading-none font-bold">{value}</dd>
     </div>
   )
 }
 
 function WelcomeCard({ onDismiss }: { onDismiss: () => void }) {
   const steps = [
-    { icon: <Play className="fill-current" />, title: 'Elige una rutina', text: 'Empieza con Push, Pull o Legs, o crea la tuya.' },
-    { icon: <TrendingUp />, title: 'Registra tus series', text: 'Peso y reps se rellenan con tu última vez: intenta superarla.' },
-    { icon: <Timer />, title: 'Descansa con el cronómetro', text: 'Al marcar ✓ arranca solo y te avisa al terminar.' },
-  ]
+    ['Elige una rutina', 'Push, Pull, Legs o la tuya propia.'],
+    ['Apunta cada serie', 'Peso y reps salen con lo de la última vez. La idea es superarlo.'],
+    ['Descansa', 'Al marcar ✓ arranca el cronómetro y avisa al terminar.'],
+  ] as const
   return (
     <Card className="relative p-4">
       <button
         type="button"
         aria-label="Cerrar bienvenida"
         onClick={onDismiss}
-        className="absolute top-2 right-2 flex size-10 items-center justify-center rounded-full text-muted-foreground active:bg-accent"
+        className="absolute top-2 right-2 flex size-10 items-center justify-center rounded-md text-muted-foreground active:bg-accent"
       >
         <X className="size-5" />
       </button>
-      <h2 className="pr-10 text-lg font-bold">Así funciona</h2>
-      <p className="mt-1 text-sm text-muted-foreground">Sin internet y sin cuentas: tus datos se quedan en el teléfono.</p>
-      <ol className="mt-4 flex flex-col gap-3">
-        {steps.map((step, i) => (
-          <li key={step.title} className="flex gap-3">
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary [&_svg]:size-5">
-              {step.icon}
-            </span>
+      <h2 className="pr-10 font-display text-xl font-bold tracking-wide uppercase">Cómo funciona</h2>
+      <ol className="mt-3 flex flex-col gap-3">
+        {steps.map(([title, text], i) => (
+          <li key={title} className="flex gap-3">
+            <span className="w-5 shrink-0 font-display text-2xl leading-none font-bold text-primary">{i + 1}</span>
             <span>
-              <span className="block font-semibold">
-                {i + 1}. {step.title}
-              </span>
-              <span className="block text-sm text-muted-foreground">{step.text}</span>
+              <span className="block font-semibold">{title}</span>
+              <span className="block text-sm text-muted-foreground">{text}</span>
             </span>
           </li>
         ))}
       </ol>
-      <Button variant="secondary" className="mt-4 w-full" onClick={onDismiss}>
+      <p className="mt-3 text-xs text-muted-foreground">Funciona sin internet. Tus datos no salen del teléfono.</p>
+      <Button variant="secondary" size="sm" className="mt-3 w-full" onClick={onDismiss}>
         Entendido
       </Button>
     </Card>
@@ -337,9 +330,9 @@ function WelcomeCard({ onDismiss }: { onDismiss: () => void }) {
 
 function SummaryStat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex flex-col-reverse rounded-lg bg-background/60 px-1 py-2">
+    <div className="flex flex-col-reverse rounded-md bg-secondary px-2 py-2">
       <dt className="text-[11px] text-muted-foreground">{label}</dt>
-      <dd className="tabular truncate text-base font-bold">{value}</dd>
+      <dd className="tabular truncate font-display text-2xl leading-none font-bold">{value}</dd>
     </div>
   )
 }

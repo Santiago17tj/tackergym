@@ -37,8 +37,8 @@ export function PageHeader({ title, subtitle, action, backTo, children }: PageHe
           </button>
         )}
         <div className="min-w-0 flex-1">
-          <h1 className="truncate text-xl font-bold tracking-tight">{title}</h1>
-          {subtitle && <p className="truncate text-sm text-muted-foreground">{subtitle}</p>}
+          <h1 className="truncate font-display text-[1.75rem] leading-none font-bold tracking-wide uppercase">{title}</h1>
+          {subtitle && <p className="mt-1 truncate text-sm text-muted-foreground">{subtitle}</p>}
         </div>
         {action}
       </div>

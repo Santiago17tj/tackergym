@@ -131,7 +131,7 @@ function Chip({ active, onClick, children }: { active: boolean; onClick: () => v
       onClick={onClick}
       aria-pressed={active}
       className={cn(
-        'h-9 shrink-0 rounded-full px-4 text-sm font-semibold whitespace-nowrap transition-colors',
+        'h-9 shrink-0 rounded-md px-3 text-sm font-semibold whitespace-nowrap transition-colors',
         active ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground',
       )}
     >

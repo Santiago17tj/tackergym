@@ -74,6 +74,14 @@ npm run generate-pwa-assets  # regenera los iconos PNG desde public/logo.svg
 
 Instalar: **iPhone** → Safari → Compartir → "Añadir a pantalla de inicio". **Android** → Chrome → ⋮ → "Instalar app".
 
+## Personalización
+
+- **Color de acento** en Ajustes: 9 colores predefinidos o uno libre. Si el color elegido no se lee bien
+  sobre el fondo oscuro se aclara automáticamente, y el texto encima pasa a negro o blanco según el
+  contraste. Se guarda con los ajustes (entra en el backup).
+- Tipografía de títulos y cifras: **Barlow Condensed** (SIL Open Font License, ver
+  `src/assets/fonts/BarlowCondensed-OFL.txt`), alojada en la app: sin peticiones externas.
+
 ## Compatibilidad y avisos
 
 - **Requisitos**: iOS/iPadOS 16.4+ (Safari), Chrome/Edge/Samsung Internet recientes en Android.

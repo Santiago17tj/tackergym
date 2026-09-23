@@ -19,7 +19,7 @@ export function SegmentedControl<T extends string>({
   className,
 }: SegmentedControlProps<T>) {
   return (
-    <div role="radiogroup" aria-label={label} className={cn('grid auto-cols-fr grid-flow-col gap-1 rounded-lg bg-secondary p-1', className)}>
+    <div role="radiogroup" aria-label={label} className={cn('grid auto-cols-fr grid-flow-col gap-1 rounded-md bg-secondary p-1', className)}>
       {options.map((option) => {
         const active = option.value === value
         return (
@@ -30,7 +30,7 @@ export function SegmentedControl<T extends string>({
             aria-checked={active}
             onClick={() => onChange(option.value)}
             className={cn(
-              'h-11 rounded-md px-1 text-sm font-semibold transition-colors sm:text-base',
+              'h-11 rounded-sm px-1 font-display text-base font-bold tracking-wide uppercase transition-colors',
               active ? 'bg-primary text-primary-foreground shadow' : 'text-muted-foreground active:bg-accent',
             )}
           >

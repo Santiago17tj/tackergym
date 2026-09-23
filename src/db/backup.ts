@@ -232,6 +232,7 @@ const guards: { [K in keyof BackupData]: Guard<BackupData[K][number]> } = {
     if (v.key === 'weightUnit') return oneOf(WEIGHT_UNITS)(v.value)
     if (v.key === 'defaultRestSeconds') return isNumber(v.value) && v.value >= 0
     if (v.key === 'autoStartRest' || v.key === 'restSound' || v.key === 'restVibration') return isBoolean(v.value)
+    if (v.key === 'accentColor') return typeof v.value === 'string' && /^#[0-9a-f]{6}$/i.test(v.value)
     return false
   },
 }

@@ -10,7 +10,6 @@ import { restTimer } from '@/features/rest-timer/store'
 import { useExerciseBests, useLastPerformances, type ActiveWorkout } from '@/hooks/useDb'
 import { useNow } from '@/hooks/useNow'
 import { formatClock } from '@/lib/format'
-import { cn } from '@/lib/utils'
 import { ExerciseBlock, type BlockStatus } from './ExerciseBlock'
 import { ExercisePicker } from './ExercisePicker'
 
@@ -147,10 +146,10 @@ export function LiveWorkout({ workout, settings }: LiveWorkoutProps) {
           <Button
             size="lg"
             variant={allDone ? 'default' : 'secondary'}
-            className={cn('h-16 text-lg', allDone && 'animate-pulse')}
+            className="h-16 text-xl"
             onClick={requestFinish}
           >
-            <Flag /> {allDone ? '¡Todo hecho! Finalizar' : 'Finalizar entrenamiento'}
+            <Flag /> {allDone ? 'Todo hecho · finalizar' : 'Finalizar entrenamiento'}
           </Button>
         )}
         <Button variant="ghost" className="text-destructive" onClick={() => setDiscardOpen(true)}>

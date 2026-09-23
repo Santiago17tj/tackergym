@@ -1,6 +1,7 @@
 import { Smartphone, Timer } from 'lucide-react'
 import { PageContainer } from '@/components/layout/PageContainer'
 import { PageHeader } from '@/components/layout/PageHeader'
+import { AccentCard } from '@/components/settings/AccentCard'
 import { BackupCard } from '@/components/settings/BackupCard'
 import { StorageCard } from '@/components/settings/StorageCard'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -29,6 +30,8 @@ export function SettingsPage() {
     <>
       <PageHeader title="Ajustes" />
       <PageContainer>
+        <AccentCard value={settings?.accentColor ?? '#a3e635'} />
+
         <Card>
           <CardHeader>
             <CardTitle>Unidad de peso</CardTitle>

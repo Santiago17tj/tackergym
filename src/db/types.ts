@@ -106,6 +106,8 @@ export interface AppSettings {
   restSound: boolean
   /** Vibración al terminar el descanso (Android; iOS no la soporta en web). */
   restVibration: boolean
+  /** Color de acento de la interfaz (#rrggbb). */
+  accentColor: string
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -114,6 +116,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   autoStartRest: true,
   restSound: true,
   restVibration: true,
+  accentColor: '#a3e635',
 }
 
 export const REST_PRESETS = [30, 60, 90, 120] as const

@@ -70,7 +70,7 @@ export const ExerciseBlock = memo(function ExerciseBlock({
       if (best > 0 && weight > best && weight > celebratedRef.current) {
         celebratedRef.current = weight
         vibrate([60, 40, 120])
-        toast.show('¡Nuevo récord!', {
+        toast.show('Récord personal', {
           description: `${name}: ${formatWeight(weight, unit)} (antes ${formatWeight(best, unit)})`,
           tone: 'record',
         })
@@ -101,10 +101,10 @@ export const ExerciseBlock = memo(function ExerciseBlock({
         >
           <CheckCircle2 className="size-7 shrink-0 text-success" aria-hidden />
           <span className="min-w-0 flex-1">
-            <span className="block truncate font-bold">{name}</span>
+            <span className="block truncate font-display text-lg font-bold uppercase">{name}</span>
             <span className="block truncate text-sm text-muted-foreground">
               {doneCount} series · máx. {formatWeight(maxKg, unit)}
-              {hasRecord && <span className="font-semibold text-primary"> · ¡récord!</span>}
+              {hasRecord && <span className="font-semibold text-primary"> · récord</span>}
             </span>
           </span>
           <ChevronDown className="size-5 shrink-0 text-muted-foreground" aria-label="Mostrar series" />
@@ -122,13 +122,13 @@ export const ExerciseBlock = memo(function ExerciseBlock({
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             {status === 'current' && (
-              <span className="rounded-full bg-primary px-2 py-0.5 text-[10px] font-extrabold tracking-wider text-primary-foreground">
+              <span className="rounded-sm bg-primary px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-primary-foreground">
                 AHORA
               </span>
             )}
             {status === 'done' && <CheckCircle2 className="size-5 text-success" aria-label="Completado" />}
           </div>
-          <h2 className="mt-1 text-lg leading-tight font-bold">{name}</h2>
+          <h2 className="mt-1 font-display text-2xl leading-tight font-bold uppercase">{name}</h2>
           <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
             {exercise && <Chip>{MUSCLE_GROUP_LABELS[exercise.muscleGroup]}</Chip>}
             {repRange && <Chip>{repRange} reps</Chip>}
@@ -138,7 +138,7 @@ export const ExerciseBlock = memo(function ExerciseBlock({
             {best > 0 && <Chip>Récord {formatWeight(best, unit)}</Chip>}
           </div>
         </div>
-        <span className="tabular mt-0.5 rounded-full bg-secondary px-2 py-0.5 text-xs font-semibold">
+        <span className="tabular mt-0.5 font-display text-xl leading-none font-bold text-muted-foreground">
           {doneCount}/{sets.length}
         </span>
         <Button

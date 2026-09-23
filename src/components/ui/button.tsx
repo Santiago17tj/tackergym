@@ -3,7 +3,7 @@ import type { ComponentProps } from 'react'
 import { cn } from '@/lib/utils'
 
 const buttonVariants = cva(
-  "inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg font-semibold transition-[color,background-color,transform] outline-none select-none focus-visible:ring-[3px] focus-visible:ring-ring/50 active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-5",
+  "inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md font-display font-bold uppercase tracking-wide transition-[color,background-color,transform] outline-none select-none focus-visible:ring-[3px] focus-visible:ring-ring/50 active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-5",
   {
     variants: {
       variant: {
@@ -16,9 +16,9 @@ const buttonVariants = cva(
       },
       // Tamaños pensados para el pulgar: mínimo 44px (guía de Apple) y 48px (Material).
       size: {
-        default: 'h-12 px-5 text-base',
-        sm: 'h-11 px-4 text-sm',
-        lg: 'h-14 px-6 text-lg',
+        default: 'h-12 px-5 text-lg',
+        sm: 'h-11 px-4 text-base',
+        lg: 'h-14 px-6 text-xl',
         icon: 'size-12',
         'icon-sm': 'size-11',
       },

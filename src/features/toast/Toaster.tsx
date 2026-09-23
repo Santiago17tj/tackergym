@@ -16,7 +16,7 @@ export function Toaster() {
           type="button"
           onClick={() => toast.dismiss(t.id)}
           className={cn(
-            'toast-in pointer-events-auto flex items-center gap-3 rounded-xl border px-3 py-2 text-left shadow-2xl shadow-black/60',
+            'toast-in pointer-events-auto flex items-center gap-3 rounded-md border px-3 py-2 text-left shadow-2xl shadow-black/60',
             t.tone === 'record' ? 'border-primary bg-primary text-primary-foreground' : 'bg-card',
           )}
         >

@@ -1,9 +1,21 @@
-import { HardDrive, Smartphone } from 'lucide-react'
+import { Smartphone } from 'lucide-react'
 import { PageContainer } from '@/components/layout/PageContainer'
 import { PageHeader } from '@/components/layout/PageHeader'
-import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { BackupCard } from '@/components/settings/BackupCard'
+import { StorageCard } from '@/components/settings/StorageCard'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { SegmentedControl } from '@/components/ui/segmented-control'
+import { APP_NAME } from '@/config/app'
+import { setSetting, type WeightUnit } from '@/db'
+import { useSettings } from '@/hooks/useDb'
+
+const UNIT_OPTIONS = [
+  { value: 'kg', label: 'Kilogramos (kg)' },
+  { value: 'lb', label: 'Libras (lb)' },
+] as const satisfies readonly { value: WeightUnit; label: string }[]
 
 export function SettingsPage() {
+  const settings = useSettings()
   const isStandalone =
     window.matchMedia('(display-mode: standalone)').matches ||
     // iOS Safari
@@ -15,15 +27,23 @@ export function SettingsPage() {
       <PageContainer>
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <HardDrive className="size-5 text-primary" /> Tus datos
-            </CardTitle>
+            <CardTitle>Unidad de peso</CardTitle>
             <CardDescription>
-              Todo se guarda solo en este dispositivo. Pronto podrás exportar e importar una copia de seguridad
-              (.json).
+              Se aplica en toda la app. Tus registros se convierten automáticamente, no se pierde nada al cambiar.
             </CardDescription>
           </CardHeader>
+          <CardContent>
+            <SegmentedControl
+              label="Unidad de peso"
+              value={settings?.weightUnit ?? 'kg'}
+              options={UNIT_OPTIONS}
+              onChange={(unit) => setSetting('weightUnit', unit)}
+            />
+          </CardContent>
         </Card>
+
+        <StorageCard />
+        <BackupCard />
 
         <Card>
           <CardHeader>
@@ -38,7 +58,9 @@ export function SettingsPage() {
           </CardHeader>
         </Card>
 
-        <p className="text-center text-xs text-muted-foreground">TackerGym v{__APP_VERSION__}</p>
+        <p className="text-center text-xs text-muted-foreground">
+          {APP_NAME} v{__APP_VERSION__}
+        </p>
       </PageContainer>
     </>
   )

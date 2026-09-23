@@ -4,8 +4,8 @@ import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
+import { APP_DESCRIPTION, APP_NAME, APP_SHORT_NAME, THEME_COLOR } from './src/config/app.ts'
 
-const THEME_COLOR = '#09090b'
 const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf-8')) as { version: string }
 
 // https://vite.dev/config/
@@ -21,6 +21,19 @@ export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
+    {
+      // Sustituye %APP_NAME%, %APP_DESCRIPTION%... en index.html
+      name: 'app-identity-html',
+      transformIndexHtml: {
+        order: 'pre',
+        handler: (html) =>
+          html
+            .replaceAll('%APP_NAME%', APP_NAME)
+            .replaceAll('%APP_SHORT_NAME%', APP_SHORT_NAME)
+            .replaceAll('%APP_DESCRIPTION%', APP_DESCRIPTION)
+            .replaceAll('%THEME_COLOR%', THEME_COLOR),
+      },
+    },
     VitePWA({
       // 'prompt': el usuario decide cuándo recargar, así una actualización
       // nunca interrumpe un entrenamiento en curso.
@@ -29,9 +42,9 @@ export default defineConfig({
       includeAssets: ['favicon.svg', 'favicon.ico', 'apple-touch-icon-180x180.png'],
       manifest: {
         id: '/',
-        name: 'TackerGym · Gym Tracker',
-        short_name: 'TackerGym',
-        description: 'Registra tus entrenamientos del gimnasio. 100% offline, tus datos se quedan en tu teléfono.',
+        name: APP_NAME,
+        short_name: APP_SHORT_NAME,
+        description: APP_DESCRIPTION,
         lang: 'es',
         dir: 'ltr',
         start_url: '/',

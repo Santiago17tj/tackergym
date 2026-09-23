@@ -1,4 +1,6 @@
-# TackerGym · Gym Tracker
+# Sobrecarga 🏋️
+
+> *Sobrecarga progresiva, sin conexión.*
 
 PWA **local-first** para registrar entrenamientos del gimnasio desde el móvil. Funciona 100 % offline:
 todos los datos viven en el dispositivo (IndexedDB) y no hay backend ni servicios en la nube.
@@ -7,7 +9,8 @@ todos los datos viven en el dispositivo (IndexedDB) y no hay backend ni servicio
 
 - **Vite + React 19 + TypeScript** — SPA estática (sin SSR, así que no hay problemas de hidratación con IndexedDB).
 - **Tailwind CSS v4** + componentes estilo **shadcn/ui** (`src/components/ui`) + **Lucide** icons.
-- **Dexie.js** (`dexie`, `dexie-react-hooks`) para IndexedDB — se configura en la Fase 2.
+- **Dexie.js** (`dexie`, `dexie-react-hooks`) para IndexedDB, con hooks reactivos `useLiveQuery`.
+- **Vitest** + `fake-indexeddb` para probar la capa de datos.
 - **vite-plugin-pwa** (Workbox) — manifest, service worker con precache completo e iconos.
 - **React Router** para la navegación (Entrenar · Rutinas · Historial · Ajustes).
 
@@ -16,12 +19,30 @@ todos los datos viven en el dispositivo (IndexedDB) y no hay backend ni servicio
 ```bash
 npm install
 npm run dev                  # servidor de desarrollo
-npm run build                # typecheck + build de producción en dist/
+npm run build                # typecheck + tests + build de producción en dist/
+npm test                     # tests de la capa de datos (Vitest)
 npm run preview              # sirve dist/ (el service worker solo funciona aquí o en producción)
 npm run lint                 # oxlint
 npm run typecheck            # tsc
 npm run generate-pwa-assets  # regenera los iconos PNG desde public/logo.svg
 ```
+
+## Datos locales (`src/db`)
+
+| Tabla | Contenido |
+| --- | --- |
+| `exercises` | Catálogo (53 ejercicios base en 6 grupos musculares) + ejercicios personalizados |
+| `routines` | Rutinas ordenables con sus ejercicios, series y rango de reps objetivo |
+| `workoutSessions` | Entrenamientos (activo / completado) |
+| `sets` | Series: peso (siempre en kg), reps y `completedAt` |
+| `settings` | Ajustes clave/valor (unidad kg/lb, descanso por defecto) |
+
+- El **seed** (catálogo + rutinas Push/Pull/Legs) se carga solo la primera vez que se crea la base de datos.
+- El peso se guarda siempre en kg; la unidad de Ajustes solo cambia cómo se muestra.
+- **Backup/Restore** en Ajustes: exporta un `.json` (hoja de compartir nativa en móvil) y lo restaura con
+  validación completa y en una sola transacción (si falla, no se toca nada).
+- Al arrancar se pide *almacenamiento persistente* para que el navegador no borre los datos.
+- El nombre de la app está centralizado en `src/config/app.ts`.
 
 ## PWA
 
@@ -41,6 +62,6 @@ y las cabeceras de caché (el `sw.js` y el manifest nunca se cachean; los assets
 ## Roadmap
 
 - [x] **Fase 1** — Proyecto base, Tailwind, UI móvil y configuración PWA.
-- [ ] **Fase 2** — Esquema Dexie (`routines`, `exercises`, `workouts`, `sets`), seed de ejercicios, backup/restore JSON.
+- [x] **Fase 2** — Esquema Dexie, seed de ejercicios y rutinas, ajustes kg/lb, backup/restore JSON.
 - [ ] **Fase 3** — Entrenamiento en vivo y temporizador de descanso.
 - [ ] **Fase 4** — Rutinas, historial/récords y build final para Vercel.

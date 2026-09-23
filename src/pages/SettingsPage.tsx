@@ -2,6 +2,7 @@ import { Smartphone, Timer } from 'lucide-react'
 import { PageContainer } from '@/components/layout/PageContainer'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { AccentCard } from '@/components/settings/AccentCard'
+import { ProfileCard, RemindersCard, ReplayWelcomeButton } from '@/components/settings/ProfileCard'
 import { BackupCard } from '@/components/settings/BackupCard'
 import { StorageCard } from '@/components/settings/StorageCard'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -30,6 +31,8 @@ export function SettingsPage() {
     <>
       <PageHeader title="Ajustes" />
       <PageContainer>
+        {settings && <ProfileCard settings={settings} />}
+        {settings && <RemindersCard settings={settings} />}
         <AccentCard value={settings?.accentColor ?? '#a3e635'} />
 
         <Card>
@@ -102,6 +105,8 @@ export function SettingsPage() {
             </CardDescription>
           </CardHeader>
         </Card>
+
+        <ReplayWelcomeButton />
 
         <p className="text-center text-xs text-muted-foreground">
           {APP_NAME} v{__APP_VERSION__}

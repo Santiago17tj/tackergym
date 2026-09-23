@@ -1,5 +1,5 @@
 import { Dexie, type EntityTable, type Table } from 'dexie'
-import { seedDatabase } from './seed'
+import { addMissingCatalogExercises, seedDatabase } from './seed'
 import type { Exercise, Routine, SettingKey, SettingRow, WorkoutSession, WorkoutSet } from './types'
 
 export const DB_NAME = 'sobrecarga'
@@ -8,7 +8,7 @@ export const DB_NAME = 'sobrecarga'
  * Versión del esquema. Si se cambian índices o la forma de los datos, añade un
  * nuevo `this.version(n).stores(...)` con `.upgrade()` en lugar de editar el actual.
  */
-export const DB_SCHEMA_VERSION = 1
+export const DB_SCHEMA_VERSION = 2
 
 export class AppDatabase extends Dexie {
   exercises!: EntityTable<Exercise, 'id'>
@@ -21,7 +21,7 @@ export class AppDatabase extends Dexie {
     super(name)
 
     // Solo se listan la clave primaria y los campos indexados.
-    this.version(DB_SCHEMA_VERSION).stores({
+    this.version(1).stores({
       exercises: 'id, name, muscleGroup',
       routines: 'id, order',
       workoutSessions: 'id, status, startedAt, routineId',
@@ -29,6 +29,12 @@ export class AppDatabase extends Dexie {
       sets: 'id, sessionId, [exerciseId+completedAt]',
       settings: 'key',
     })
+
+    // v2: mismo esquema; incorpora los ejercicios nuevos del catálogo a bases
+    // de datos ya existentes (sin tocar los datos del usuario).
+    this.version(2)
+      .stores({})
+      .upgrade((tx) => addMissingCatalogExercises(tx))
 
     // Se ejecuta UNA sola vez: cuando la base de datos se crea por primera vez.
     this.on('populate', (tx) => seedDatabase(tx))

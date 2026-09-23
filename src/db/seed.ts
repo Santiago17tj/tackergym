@@ -3,8 +3,12 @@ import type { Equipment, Exercise, MuscleGroup, Routine, RoutineExercise } from 
 
 type SeedExercise = [id: string, name: string, equipment: Equipment]
 
-/** Catálogo base. Los IDs son estables: las rutinas de ejemplo los referencian. */
-const SEED_EXERCISES: Record<MuscleGroup, SeedExercise[]> = {
+/**
+ * Catálogo base. Los IDs son estables: rutinas y programas los referencian.
+ * Añadir ejercicios aquí los incorpora también a bases de datos existentes
+ * (ver la migración en db.ts).
+ */
+export const SEED_EXERCISES: Record<MuscleGroup, SeedExercise[]> = {
   chest: [
     ['bench-press', 'Press de banca', 'barbell'],
     ['incline-bench-press', 'Press inclinado con barra', 'barbell'],
@@ -15,6 +19,8 @@ const SEED_EXERCISES: Record<MuscleGroup, SeedExercise[]> = {
     ['pec-deck', 'Pec deck (contractor)', 'machine'],
     ['dips', 'Fondos en paralelas', 'bodyweight'],
     ['push-up', 'Flexiones', 'bodyweight'],
+    ['incline-push-up', 'Flexiones inclinadas', 'bodyweight'],
+    ['dumbbell-fly', 'Aperturas con mancuernas', 'dumbbell'],
   ],
   back: [
     ['deadlift', 'Peso muerto', 'barbell'],
@@ -26,6 +32,9 @@ const SEED_EXERCISES: Record<MuscleGroup, SeedExercise[]> = {
     ['t-bar-row', 'Remo en T', 'barbell'],
     ['straight-arm-pulldown', 'Pullover en polea', 'cable'],
     ['face-pull', 'Face pull', 'cable'],
+    ['chin-up', 'Dominadas supinas', 'bodyweight'],
+    ['inverted-row', 'Remo invertido', 'bodyweight'],
+    ['assisted-pull-up', 'Dominadas asistidas', 'machine'],
   ],
   legs: [
     ['back-squat', 'Sentadilla con barra', 'barbell'],
@@ -40,6 +49,14 @@ const SEED_EXERCISES: Record<MuscleGroup, SeedExercise[]> = {
     ['seated-leg-curl', 'Curl femoral sentado', 'machine'],
     ['hip-abduction', 'Abducción de cadera', 'machine'],
     ['standing-calf-raise', 'Elevación de talones de pie', 'machine'],
+    ['bodyweight-squat', 'Sentadilla sin peso', 'bodyweight'],
+    ['goblet-squat', 'Sentadilla goblet', 'dumbbell'],
+    ['hack-squat', 'Sentadilla hack', 'machine'],
+    ['sumo-deadlift', 'Peso muerto sumo', 'barbell'],
+    ['dumbbell-romanian-deadlift', 'Peso muerto rumano con mancuernas', 'dumbbell'],
+    ['glute-bridge', 'Puente de glúteo', 'bodyweight'],
+    ['step-up', 'Subidas al cajón', 'dumbbell'],
+    ['cable-kickback', 'Patada de glúteo en polea', 'cable'],
   ],
   shoulders: [
     ['overhead-press', 'Press militar', 'barbell'],
@@ -50,6 +67,8 @@ const SEED_EXERCISES: Record<MuscleGroup, SeedExercise[]> = {
     ['rear-delt-fly', 'Pájaros (deltoide posterior)', 'dumbbell'],
     ['reverse-pec-deck', 'Pec deck inverso', 'machine'],
     ['shrug', 'Encogimientos de hombros', 'dumbbell'],
+    ['arnold-press', 'Press Arnold', 'dumbbell'],
+    ['pike-push-up', 'Flexiones en pica', 'bodyweight'],
   ],
   arms: [
     ['barbell-curl', 'Curl con barra', 'barbell'],
@@ -61,6 +80,9 @@ const SEED_EXERCISES: Record<MuscleGroup, SeedExercise[]> = {
     ['overhead-triceps-extension', 'Extensión de tríceps sobre la cabeza', 'cable'],
     ['skull-crusher', 'Press francés', 'barbell'],
     ['close-grip-bench-press', 'Press de banca agarre cerrado', 'barbell'],
+    ['concentration-curl', 'Curl concentrado', 'dumbbell'],
+    ['dumbbell-kickback', 'Patada de tríceps con mancuerna', 'dumbbell'],
+    ['bench-dip', 'Fondos en banco', 'bodyweight'],
   ],
   core: [
     ['plank', 'Plancha', 'bodyweight'],
@@ -69,6 +91,10 @@ const SEED_EXERCISES: Record<MuscleGroup, SeedExercise[]> = {
     ['ab-wheel', 'Rueda abdominal', 'other'],
     ['russian-twist', 'Giros rusos', 'bodyweight'],
     ['crunch', 'Crunch abdominal', 'bodyweight'],
+    ['side-plank', 'Plancha lateral', 'bodyweight'],
+    ['dead-bug', 'Dead bug', 'bodyweight'],
+    ['mountain-climber', 'Escaladores', 'bodyweight'],
+    ['burpee', 'Burpees', 'bodyweight'],
   ],
 }
 
@@ -151,6 +177,15 @@ export function buildSeedRoutines(now = Date.now()): Routine[] {
       }),
     ),
   }))
+}
+
+/** Añade los ejercicios del catálogo que falten (por ID). No modifica los existentes. */
+export async function addMissingCatalogExercises(tx: Transaction): Promise<number> {
+  const table = tx.table<Exercise, string>('exercises')
+  const existing = new Set(await table.toCollection().primaryKeys())
+  const missing = buildSeedExercises().filter((e) => !existing.has(e.id))
+  if (missing.length) await table.bulkAdd(missing)
+  return missing.length
 }
 
 export async function seedDatabase(tx: Transaction): Promise<void> {

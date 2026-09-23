@@ -48,7 +48,7 @@ export function WorkoutDetailPage() {
                 to={`/historial/ejercicio/${block.exercise.id}`}
                 className="flex items-center justify-between gap-2 p-4 pb-2 active:bg-accent/50"
               >
-                <h2 className="truncate font-display text-xl font-bold uppercase">{block.exercise.name}</h2>
+                <h2 className="truncate text-lg font-bold">{block.exercise.name}</h2>
                 <ChevronRight className="size-5 shrink-0 text-muted-foreground" aria-label="Ver progreso" />
               </Link>
             ) : (

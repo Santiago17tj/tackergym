@@ -4,12 +4,15 @@ import { REST_PRESETS, type AppSettings } from '@/db'
 import { useSettings } from '@/hooks/useDb'
 import { useNow } from '@/hooks/useNow'
 import { playRestFinishedSound, vibrate } from '@/lib/alerts'
+import { notifyIfHidden } from '@/lib/notify'
 import { formatClock, formatRest } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { restTimer, useRestTimer } from './store'
 
 /** Si el aviso llega tarde (app en segundo plano), no suena pasado este margen. */
 const LATE_ALERT_TOLERANCE_MS = 30_000
+/** En segundo plano Android retrasa los timers; el aviso del sistema aún sirve un rato después. */
+const LATE_NOTIFICATION_TOLERANCE_MS = 3 * 60_000
 /** Tiempo que se muestra "Descanso terminado" antes de ocultarse. */
 const FINISHED_VISIBLE_MS = 6_000
 
@@ -30,6 +33,7 @@ export function RestTimerBar() {
   }, [settings])
 
   const endsAt = timer?.endsAt
+  const timerLabel = timer?.label
 
   // Alerta exacta al terminar (independiente del refresco visual).
   useEffect(() => {
@@ -37,13 +41,17 @@ export function RestTimerBar() {
     const delay = endsAt - Date.now()
     if (delay <= 0) return
     const id = setTimeout(() => {
-      if (Date.now() - endsAt > LATE_ALERT_TOLERANCE_MS) return
+      const late = Date.now() - endsAt
+      if (late <= LATE_NOTIFICATION_TOLERANCE_MS) {
+        void notifyIfHidden('Descanso terminado', timerLabel ? `Siguiente serie de ${timerLabel}` : 'A por la siguiente serie', 'rest')
+      }
+      if (late > LATE_ALERT_TOLERANCE_MS) return
       const s = settingsRef.current
       if (s?.restSound ?? true) playRestFinishedSound()
       if (s?.restVibration ?? true) vibrate([250, 120, 250, 120, 400])
     }, delay)
     return () => clearTimeout(id)
-  }, [endsAt])
+  }, [endsAt, timerLabel])
 
   // Se oculta sola un rato después de terminar.
   useEffect(() => {
@@ -84,7 +92,7 @@ export function RestTimerBar() {
             aria-label="Opciones de descanso"
           >
             {finished ? (
-              <span className="flex items-center gap-2 pl-2 font-display text-2xl font-bold uppercase">
+              <span className="flex items-center gap-2 pl-2 font-display text-2xl font-bold">
                 <BellRing className="size-6" /> Descanso terminado
               </span>
             ) : (

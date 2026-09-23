@@ -13,11 +13,17 @@ export const router = createBrowserRouter([
     path: '/',
     element: <AppShell />,
     errorElement: <ErrorPage />,
+    // Mientras carga la pantalla diferida inicial no se pinta nada (es instantáneo: está precacheada).
+    HydrateFallback: () => null,
     children: [
       { index: true, element: <WorkoutPage /> },
       {
         path: 'rutinas',
         lazy: async () => ({ Component: (await import('@/pages/RoutinesPage')).RoutinesPage }),
+      },
+      {
+        path: 'rutinas/programas',
+        lazy: async () => ({ Component: (await import('@/pages/ProgramsPage')).ProgramsPage }),
       },
       {
         path: 'rutinas/nueva',

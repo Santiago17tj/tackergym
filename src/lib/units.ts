@@ -39,3 +39,10 @@ export function formatNumber(value: number, maxDecimals = 2): string {
 export function formatWeight(kg: number, unit: WeightUnit, maxDecimals = 2): string {
   return `${formatNumber(toDisplayWeight(kg, unit), maxDecimals)} ${unit}`
 }
+
+/** "82,5 kg × 8", "Peso corporal × 12"; null si aún no hay repeticiones. */
+export function formatSet(weightKg: number | null, reps: number | null, unit: WeightUnit): string | null {
+  if (reps === null) return null
+  const weight = weightKg ? `${formatNumber(toDisplayWeight(weightKg, unit))} ${unit}` : 'Peso corporal'
+  return `${weight} × ${reps}`
+}

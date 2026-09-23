@@ -1,15 +1,18 @@
-import { Loader2, Play, Plus, X } from 'lucide-react'
+import { Loader2, Play, Plus, Share2, X } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router'
 import { EmptyState } from '@/components/EmptyState'
 import { PageContainer } from '@/components/layout/PageContainer'
 import { PageHeader } from '@/components/layout/PageHeader'
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
+import { APP_NAME } from '@/config/app'
 import { Card } from '@/components/ui/card'
 import { startWorkout, WorkoutError, type AppSettings, type WorkoutSummary } from '@/db'
 import { useHomeSummary, useRoutinesWithExercises, type RoutineWithExercises } from '@/hooks/useDb'
-import { formatClock, formatRelativeDay } from '@/lib/format'
+import { hello } from '@/lib/address'
+import { formatClock, formatDuration, formatRelativeDay } from '@/lib/format'
 import { estimateRoutineMinutes, routineMuscleGroups } from '@/lib/routine-meta'
+import { whatsappUrl } from '@/lib/share'
 import { formatWeight } from '@/lib/units'
 import { cn } from '@/lib/utils'
 
@@ -17,7 +20,6 @@ type LocationState = { summary?: WorkoutSummary; name?: string } | null
 
 const WEEKDAYS = ['L', 'M', 'X', 'J', 'V', 'S', 'D']
 const WEEKDAY_NAMES = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo']
-const WELCOME_KEY = 'welcome-dismissed'
 
 const titleFormat = new Intl.DateTimeFormat('es', { weekday: 'long', day: 'numeric' })
 const monthFormat = new Intl.DateTimeFormat('es', { month: 'long' })
@@ -33,14 +35,6 @@ function isoWeek(date = new Date()): number {
 
 const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1)
 
-function readWelcomeDismissed(): boolean {
-  try {
-    return localStorage.getItem(WELCOME_KEY) === '1'
-  } catch {
-    return false
-  }
-}
-
 export function StartWorkout({ settings }: { settings: AppSettings }) {
   const routines = useRoutinesWithExercises()
   const home = useHomeSummary()
@@ -48,7 +42,6 @@ export function StartWorkout({ settings }: { settings: AppSettings }) {
   const navigate = useNavigate()
   const [starting, setStarting] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [welcomeDismissed, setWelcomeDismissed] = useState(readWelcomeDismissed)
   const state = location.state as LocationState
   // No se pinta nada hasta tener los datos: evita saltos de diseño (CLS).
   const loaded = routines !== undefined && home !== undefined
@@ -66,26 +59,21 @@ export function StartWorkout({ settings }: { settings: AppSettings }) {
     }
   }
 
-  function dismissWelcome() {
-    setWelcomeDismissed(true)
-    try {
-      localStorage.setItem(WELCOME_KEY, '1')
-    } catch {
-      // Sin almacenamiento: se volverá a mostrar, no pasa nada.
-    }
-  }
-
   const now = new Date()
   const suggested = loaded ? routines.find((r) => r.id === home.suggestedRoutineId) : undefined
   const others = loaded ? routines.filter((r) => r.id !== suggested?.id) : []
   const todayIndex = (new Date().getDay() + 6) % 7
-  const showWelcome = loaded && !welcomeDismissed && home.totalWorkouts === 0
+  const name = settings.displayName.trim()
 
   return (
     <>
       <PageHeader
-        title={titleFormat.format(now).replace(',', '')}
-        subtitle={`${capitalize(monthFormat.format(now))} · semana ${isoWeek(now)}`}
+        title={name ? hello(name) : capitalize(titleFormat.format(now).replace(',', ''))}
+        subtitle={
+          name
+            ? `${capitalize(titleFormat.format(now).replace(',', ''))} de ${monthFormat.format(now)}`
+            : `${capitalize(monthFormat.format(now))} · semana ${isoWeek(now)}`
+        }
       />
       <PageContainer className="gap-5">
         {state?.summary && (
@@ -98,13 +86,26 @@ export function StartWorkout({ settings }: { settings: AppSettings }) {
             >
               <X className="size-5" />
             </button>
-            <p className="font-display text-xl font-bold tracking-wide uppercase">Entrenamiento guardado</p>
+            <p className="font-display text-2xl font-bold">{name ? `Buen trabajo, ${name}` : 'Buen trabajo'}</p>
             <p className="mt-1 text-sm text-muted-foreground">{state.name}</p>
             <dl className="mt-3 grid grid-cols-3 gap-2 text-center">
               <SummaryStat label="Duración" value={formatClock(state.summary.durationMs)} />
               <SummaryStat label="Series" value={String(state.summary.completedSets)} />
               <SummaryStat label="Volumen" value={formatWeight(state.summary.volumeKg, settings.weightUnit, 0)} />
             </dl>
+            <a
+              href={whatsappUrl(
+                `Entrenamiento completado: ${state.name} 💪\n` +
+                  `${formatDuration(state.summary.durationMs)} · ${state.summary.completedSets} series · ` +
+                  `${formatWeight(state.summary.volumeKg, settings.weightUnit, 0)} de volumen\n` +
+                  `(registrado con ${APP_NAME})`,
+              )}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={cn(buttonVariants({ variant: 'secondary' }), 'mt-3 w-full')}
+            >
+              <Share2 /> Compartir por WhatsApp
+            </a>
           </Card>
         )}
 
@@ -113,8 +114,6 @@ export function StartWorkout({ settings }: { settings: AppSettings }) {
             {error}
           </p>
         )}
-
-        {showWelcome && <WelcomeCard onDismiss={dismissWelcome} />}
 
         {loaded && (
           <section aria-labelledby="week-title">
@@ -198,7 +197,7 @@ export function StartWorkout({ settings }: { settings: AppSettings }) {
                 return (
                   <div key={routine.id} className="flex items-center gap-3 p-3 pl-4">
                     <div className="min-w-0 flex-1">
-                      <p className="truncate font-display text-xl font-bold uppercase">{routine.name}</p>
+                      <p className="truncate font-display text-2xl leading-tight font-bold">{routine.name}</p>
                       <p className="truncate text-xs text-muted-foreground">
                         {routineMuscleGroups(routine.exercises).slice(0, 3).join(' · ') || 'Sin ejercicios'}
                         {' · '}
@@ -262,7 +261,7 @@ function SuggestedCard({
       <p className="text-xs font-semibold tracking-wider text-primary uppercase">
         Siguiente · {lastDone ? `última vez ${formatRelativeDay(lastDone)}` : 'aún sin hacer'}
       </p>
-      <h2 id="suggested-title" className="mt-1 font-display text-5xl leading-[0.95] font-bold uppercase">
+      <h2 id="suggested-title" className="mt-1 font-display text-5xl leading-[0.95] font-bold">
         {routine.name}
       </h2>
       {groups.length > 0 && <p className="mt-2 text-sm text-muted-foreground">{groups.join(' / ')}</p>}
@@ -289,42 +288,6 @@ function Figure({ label, value }: { label: string; value: number }) {
       <dt className="text-xs text-muted-foreground">{label}</dt>
       <dd className="tabular font-display text-3xl leading-none font-bold">{value}</dd>
     </div>
-  )
-}
-
-function WelcomeCard({ onDismiss }: { onDismiss: () => void }) {
-  const steps = [
-    ['Elige una rutina', 'Push, Pull, Legs o la tuya propia.'],
-    ['Apunta cada serie', 'Peso y reps salen con lo de la última vez. La idea es superarlo.'],
-    ['Descansa', 'Al marcar ✓ arranca el cronómetro y avisa al terminar.'],
-  ] as const
-  return (
-    <Card className="relative p-4">
-      <button
-        type="button"
-        aria-label="Cerrar bienvenida"
-        onClick={onDismiss}
-        className="absolute top-2 right-2 flex size-10 items-center justify-center rounded-md text-muted-foreground active:bg-accent"
-      >
-        <X className="size-5" />
-      </button>
-      <h2 className="pr-10 font-display text-xl font-bold tracking-wide uppercase">Cómo funciona</h2>
-      <ol className="mt-3 flex flex-col gap-3">
-        {steps.map(([title, text], i) => (
-          <li key={title} className="flex gap-3">
-            <span className="w-5 shrink-0 font-display text-2xl leading-none font-bold text-primary">{i + 1}</span>
-            <span>
-              <span className="block font-semibold">{title}</span>
-              <span className="block text-sm text-muted-foreground">{text}</span>
-            </span>
-          </li>
-        ))}
-      </ol>
-      <p className="mt-3 text-xs text-muted-foreground">Funciona sin internet. Tus datos no salen del teléfono.</p>
-      <Button variant="secondary" size="sm" className="mt-3 w-full" onClick={onDismiss}>
-        Entendido
-      </Button>
-    </Card>
   )
 }
 

@@ -1,11 +1,12 @@
 import { Dumbbell, History, ListChecks, Settings } from 'lucide-react'
 import { useEffect } from 'react'
 import { NavLink, Outlet } from 'react-router'
+import { Onboarding } from '@/components/onboarding/Onboarding'
 import { UpdatePrompt } from '@/components/pwa/UpdatePrompt'
 import { RestTimerBar } from '@/features/rest-timer/RestTimerBar'
 import { useRestTimer } from '@/features/rest-timer/store'
 import { Toaster } from '@/features/toast/Toaster'
-import { useHasActiveWorkout, useSettings } from '@/hooks/useDb'
+import { useHasActiveWorkout, useRoutines, useSettings } from '@/hooks/useDb'
 import { useWakeLock } from '@/hooks/useWakeLock'
 import { applyAccent } from '@/lib/accent'
 import { cn } from '@/lib/utils'
@@ -27,14 +28,19 @@ export function AppShell() {
   // Pantalla encendida durante todo el entrenamiento, aunque se cambie de pestaña.
   useWakeLock(hasActiveWorkout)
 
-  const accentColor = useSettings()?.accentColor
+  const settings = useSettings()
+  const routines = useRoutines()
+  const accentColor = settings?.accentColor
   useEffect(() => {
     if (accentColor) applyAccent(accentColor)
   }, [accentColor])
 
+  const showOnboarding = Boolean(settings && routines && !settings.onboarded)
+
   return (
     <div className="flex min-h-dvh flex-col px-safe">
       <main
+        inert={showOnboarding}
         className={cn(
           'flex-1 pt-safe',
           // Deja hueco para la barra del cronómetro cuando está visible.
@@ -47,8 +53,12 @@ export function AppShell() {
       <UpdatePrompt />
       <RestTimerBar />
       <Toaster />
+      {showOnboarding && settings && routines && (
+        <Onboarding settings={settings} existingRoutineNames={routines.map((r) => r.name)} />
+      )}
 
       <nav
+        inert={showOnboarding}
         aria-label="Navegación principal"
         className="fixed inset-x-0 bottom-0 z-40 border-t bg-background/90 pb-safe px-safe backdrop-blur-lg"
       >
@@ -77,7 +87,7 @@ export function AppShell() {
                         </span>
                       )}
                     </span>
-                    <span className={cn('tracking-wide uppercase', isActive && 'font-bold')}>{label}</span>
+                    <span className={cn(isActive && 'font-bold')}>{label}</span>
                   </>
                 )}
               </NavLink>

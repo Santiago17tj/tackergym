@@ -66,6 +66,8 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2,webmanifest,mp3,wav}'],
         navigateFallback: '/index.html',
         cleanupOutdatedCaches: true,
+        // Manejador de clic en notificaciones (public/sw-notifications.js)
+        importScripts: ['/sw-notifications.js'],
       },
       devOptions: {
         enabled: false,

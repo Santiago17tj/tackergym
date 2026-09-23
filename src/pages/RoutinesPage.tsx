@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowUp, ChevronDown, Copy, ListChecks, MoreVertical, Pencil, Play, Plus, Trash2 } from 'lucide-react'
+import { ArrowDown, ArrowUp, ChevronDown, ChevronRight, Copy, ListChecks, MoreVertical, Pencil, Play, Plus, Sparkles, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { EmptyState } from '@/components/EmptyState'
@@ -59,6 +59,21 @@ export function RoutinesPage() {
           </p>
         )}
 
+        <button
+          type="button"
+          onClick={() => navigate('/rutinas/programas')}
+          className="flex items-center gap-3 rounded-lg border border-primary/50 p-4 text-left active:bg-accent"
+        >
+          <Sparkles className="size-6 shrink-0 text-primary" aria-hidden />
+          <span className="min-w-0 flex-1">
+            <span className="block font-semibold">Explorar programas</span>
+            <span className="block text-sm text-muted-foreground">
+              Cuerpo completo, torso/pierna, 5×5, glúteo, en casa, mancuernas…
+            </span>
+          </span>
+          <ChevronRight className="size-5 shrink-0 text-muted-foreground" aria-hidden />
+        </button>
+
         {routines?.length === 0 && (
           <EmptyState
             icon={ListChecks}
@@ -78,7 +93,7 @@ export function RoutinesPage() {
             <Card key={routine.id} className="overflow-hidden">
               <div className="flex items-start gap-2 p-4 pb-3">
                 <div className="min-w-0 flex-1">
-                  <h2 className="truncate font-display text-3xl leading-tight font-bold uppercase">{routine.name}</h2>
+                  <h2 className="truncate font-display text-3xl leading-tight font-bold">{routine.name}</h2>
                   {routine.description && (
                     <p className="truncate text-sm text-muted-foreground">{routine.description}</p>
                   )}

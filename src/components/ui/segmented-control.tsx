@@ -30,7 +30,7 @@ export function SegmentedControl<T extends string>({
             aria-checked={active}
             onClick={() => onChange(option.value)}
             className={cn(
-              'h-11 rounded-sm px-1 font-display text-base font-bold tracking-wide uppercase transition-colors',
+              'h-11 rounded-md px-1 text-sm font-semibold transition-colors',
               active ? 'bg-primary text-primary-foreground shadow' : 'text-muted-foreground active:bg-accent',
             )}
           >

@@ -87,7 +87,7 @@ function WorkoutList() {
               <Card className="flex items-center gap-3 p-4 active:bg-accent/50">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-baseline justify-between gap-2">
-                    <h3 className="truncate font-display text-xl font-bold uppercase">{item.session.name}</h3>
+                    <h3 className="truncate font-display text-2xl leading-tight font-bold">{item.session.name}</h3>
                     <span className="shrink-0 text-xs text-muted-foreground">{formatDayTime(item.session.startedAt)}</span>
                   </div>
                   <p className="mt-1 truncate text-sm text-muted-foreground">{item.exerciseNames.join(' · ')}</p>

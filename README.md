@@ -74,6 +74,26 @@ npm run generate-pwa-assets  # regenera los iconos PNG desde public/logo.svg
 
 Instalar: **iPhone** → Safari → Compartir → "Añadir a pantalla de inicio". **Android** → Chrome → ⋮ → "Instalar app".
 
+## Programas, perfil y recordatorios
+
+- **Bienvenida** la primera vez: nombre o apodo, trato (femenino, masculino o neutro), días por semana
+  y lugar (gimnasio, solo mancuernas o casa) → programa recomendado y recordatorios. Se puede saltar y
+  repetir desde Ajustes.
+- **Programas** listos para añadir (Rutinas → Explorar programas): Cuerpo completo, Torso/Pierna,
+  Push/Pull/Legs, Fuerza 5×5, Glúteo y pierna, Solo mancuernas y En casa sin equipo. El catálogo tiene
+  75 ejercicios; la migración v2 de la base de datos añade los nuevos a instalaciones existentes.
+- **Recordatorios** con el calendario del teléfono (Google Calendar o archivo `.ics` para iPhone y
+  otros): evento semanal con alarma, avisa aunque la app esté cerrada. Sin servidor.
+- **Avisos del sistema** al terminar el descanso si la app está en segundo plano (Notification API vía
+  service worker; Android y PWA instalada en iOS 16.4+).
+- **Compartir por WhatsApp** el resumen al terminar un entrenamiento.
+- Series: se apuntan tocando la serie (panel con −/+ de 2,5 kg / 5 lb y 1 rep, o escribiendo) y se
+  marcan con un botón grande.
+
+> ¿Recordatorios por WhatsApp? Enviar mensajes automáticos exige un servidor y la API de WhatsApp
+> Business (de pago y con aprobación de Meta), lo que rompería el diseño local y sin nube. El
+> calendario del teléfono cumple la misma función sin coste ni datos fuera del dispositivo.
+
 ## Personalización
 
 - **Color de acento** en Ajustes: 9 colores predefinidos o uno libre. Si el color elegido no se lee bien

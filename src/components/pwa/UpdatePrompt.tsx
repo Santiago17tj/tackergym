@@ -43,7 +43,7 @@ export function UpdatePrompt() {
   return (
     <div
       role="status"
-      className="fixed inset-x-0 bottom-[calc(var(--nav-h)+var(--safe-bottom)+0.75rem)] z-50 mx-auto w-[calc(100%-2rem)] max-w-md rounded-xl border bg-card p-3 shadow-2xl shadow-black/50"
+      className="fixed inset-x-0 top-[calc(var(--safe-top)+var(--header-h)+0.5rem)] z-50 mx-auto w-[calc(100%-2rem)] max-w-md rounded-xl border bg-card p-3 shadow-2xl shadow-black/50"
     >
       <div className="flex items-center gap-3">
         <p className="flex-1 text-sm">

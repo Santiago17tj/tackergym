@@ -1,6 +1,13 @@
 import { Dumbbell, History, ListChecks, Settings } from 'lucide-react'
+import { useEffect } from 'react'
 import { NavLink, Outlet } from 'react-router'
 import { UpdatePrompt } from '@/components/pwa/UpdatePrompt'
+import { RestTimerBar } from '@/features/rest-timer/RestTimerBar'
+import { useRestTimer } from '@/features/rest-timer/store'
+import { Toaster } from '@/features/toast/Toaster'
+import { useHasActiveWorkout, useSettings } from '@/hooks/useDb'
+import { useWakeLock } from '@/hooks/useWakeLock'
+import { applyAccent } from '@/lib/accent'
 import { cn } from '@/lib/utils'
 
 const NAV_ITEMS = [
@@ -15,13 +22,31 @@ const NAV_ITEMS = [
  * (zona del pulgar), respetando las safe areas del notch y la barra de gestos.
  */
 export function AppShell() {
+  const hasActiveWorkout = useHasActiveWorkout()
+  const restActive = useRestTimer() !== null
+  // Pantalla encendida durante todo el entrenamiento, aunque se cambie de pestaña.
+  useWakeLock(hasActiveWorkout)
+
+  const accentColor = useSettings()?.accentColor
+  useEffect(() => {
+    if (accentColor) applyAccent(accentColor)
+  }, [accentColor])
+
   return (
     <div className="flex min-h-dvh flex-col px-safe">
-      <main className="flex-1 pt-safe pb-[calc(var(--nav-h)+var(--safe-bottom))]">
+      <main
+        className={cn(
+          'flex-1 pt-safe',
+          // Deja hueco para la barra del cronómetro cuando está visible.
+          restActive ? 'pb-[calc(var(--nav-h)+var(--safe-bottom)+6rem)]' : 'pb-[calc(var(--nav-h)+var(--safe-bottom))]',
+        )}
+      >
         <Outlet />
       </main>
 
       <UpdatePrompt />
+      <RestTimerBar />
+      <Toaster />
 
       <nav
         aria-label="Navegación principal"
@@ -36,12 +61,25 @@ export function AppShell() {
                 className={({ isActive }) =>
                   cn(
                     'flex h-full flex-col items-center justify-center gap-1 text-xs font-medium transition-colors',
+                    'relative',
                     isActive ? 'text-primary' : 'text-muted-foreground active:text-foreground',
                   )
                 }
               >
-                <Icon className="size-6" aria-hidden />
-                {label}
+                {({ isActive }) => (
+                  <>
+                    {isActive && <span aria-hidden className="absolute inset-x-5 top-0 h-0.5 bg-primary" />}
+                    <span className="relative flex h-8 w-14 items-center justify-center">
+                      <Icon className="size-6" aria-hidden />
+                      {to === '/' && hasActiveWorkout && (
+                        <span className="absolute top-0 right-2.5 size-2.5 animate-pulse rounded-full bg-primary ring-2 ring-background">
+                          <span className="sr-only">Entrenamiento en curso</span>
+                        </span>
+                      )}
+                    </span>
+                    <span className={cn('tracking-wide uppercase', isActive && 'font-bold')}>{label}</span>
+                  </>
+                )}
               </NavLink>
             </li>
           ))}

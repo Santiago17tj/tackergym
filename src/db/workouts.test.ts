@@ -164,4 +164,39 @@ describe('entrenamiento en vivo', () => {
     expect(await db.workoutSessions.count()).toBe(0)
     expect(await db.sets.count()).toBe(0)
   })
+
+  it('guarda notas al finalizar y se pueden editar', async () => {
+    const { updateWorkoutNotes } = await import('./workouts')
+    const session = await startWorkout()
+    await addExerciseToWorkout(session.id, 'bench-press')
+    await completeAll(session.id, { weightKg: 50, reps: 5 })
+    await finishWorkout(session.id, '  Me dolía el hombro  ')
+    expect((await db.workoutSessions.get(session.id))?.notes).toBe('Me dolía el hombro')
+    await updateWorkoutNotes(session.id, 'x'.repeat(600))
+    expect((await db.workoutSessions.get(session.id))?.notes).toHaveLength(500)
+  })
+
+  it('corregir historial: borrar series renumera, quita ejercicios vacíos y entrenos vacíos', async () => {
+    const { deleteHistorySet } = await import('./workouts')
+    const session = await startWorkout()
+    const bench = await addExerciseToWorkout(session.id, 'bench-press')
+    const dips = await addExerciseToWorkout(session.id, 'dips')
+    await completeAll(session.id, { weightKg: 50, reps: 5 })
+    await finishWorkout(session.id)
+    const sets = await getSessionSets(session.id)
+    const benchSets = sets.filter((s) => s.sessionExerciseId === bench.id)
+    const dipSets = sets.filter((s) => s.sessionExerciseId === dips.id)
+
+    expect(await deleteHistorySet(benchSets[0].id)).toBe('set')
+    expect((await getSessionSets(session.id)).filter((s) => s.sessionExerciseId === bench.id).map((s) => s.setNumber)).toEqual([1, 2])
+
+    for (const s of dipSets.slice(0, -1)) expect(await deleteHistorySet(s.id)).toBe('set')
+    expect(await deleteHistorySet(dipSets.at(-1)!.id)).toBe('exercise')
+    expect((await db.workoutSessions.get(session.id))?.exercises.map((e) => e.id)).toEqual([bench.id])
+
+    const rest = await getSessionSets(session.id)
+    for (const s of rest.slice(0, -1)) await deleteHistorySet(s.id)
+    expect(await deleteHistorySet(rest.at(-1)!.id)).toBe('workout')
+    expect(await db.workoutSessions.get(session.id)).toBeUndefined()
+  })
 })

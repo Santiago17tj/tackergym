@@ -1,4 +1,4 @@
-import { Check, History, Minus, Plus } from 'lucide-react'
+import { Check, Disc3, History, Minus, Plus, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { NumericInput } from '@/components/ui/input'
@@ -6,6 +6,7 @@ import { Sheet } from '@/components/ui/sheet'
 import { setSetCompleted, updateSet, type WeightUnit, type WorkoutSet } from '@/db'
 import type { LastPerformance } from '@/db/history'
 import { unlockAudio, vibrate } from '@/lib/alerts'
+import { BAR_WEIGHT, platesFor } from '@/lib/plates'
 import { formatNumber, formatSet, parseDecimal, toDisplayWeight, toStoredWeight } from '@/lib/units'
 
 type SetEditorProps = {
@@ -14,8 +15,15 @@ type SetEditorProps = {
   previous: LastPerformance['sets'][number] | undefined
   unit: WeightUnit
   repsTarget: string | null
+  /** Ejercicio con barra: muestra la calculadora de discos. */
+  barbell?: boolean
   onClose: () => void
-  onCompleted: (set: WorkoutSet) => void
+  onCompleted?: (set: WorkoutSet) => void
+  /**
+   * Modo historial (corregir un entrenamiento ya guardado): solo "Guardar"
+   * (con reps obligatorias) y opción de borrar la serie.
+   */
+  onDelete?: (set: WorkoutSet) => void
 }
 
 /** Salto de los botones −/+ del peso: 2,5 kg o 5 lb (discos habituales). */
@@ -25,7 +33,17 @@ const WEIGHT_STEP = { kg: 2.5, lb: 5 } as const
  * Panel para apuntar una serie con una mano: botones −/+ grandes y, si hace
  * falta, el número se puede escribir tocándolo.
  */
-export function SetEditor({ exerciseName, set, previous, unit, repsTarget, onClose, onCompleted }: SetEditorProps) {
+export function SetEditor({
+  exerciseName,
+  set,
+  previous,
+  unit,
+  repsTarget,
+  barbell,
+  onClose,
+  onCompleted,
+  onDelete,
+}: SetEditorProps) {
   return (
     <Sheet open={set !== null} onClose={onClose} title={set ? `Serie ${set.setNumber} · ${exerciseName}` : ''}>
       {set && (
@@ -35,8 +53,10 @@ export function SetEditor({ exerciseName, set, previous, unit, repsTarget, onClo
           previous={previous}
           unit={unit}
           repsTarget={repsTarget}
+          barbell={barbell}
           onClose={onClose}
           onCompleted={onCompleted}
+          onDelete={onDelete}
         />
       )}
     </Sheet>
@@ -48,9 +68,12 @@ function EditorBody({
   previous,
   unit,
   repsTarget,
+  barbell,
   onClose,
   onCompleted,
+  onDelete,
 }: Omit<SetEditorProps, 'exerciseName' | 'set'> & { set: WorkoutSet }) {
+  const historyMode = onDelete !== undefined
   const initialWeight = set.weightKg === null ? '' : String(toDisplayWeight(set.weightKg, unit))
   const [weightText, setWeightText] = useState(initialWeight)
   const [repsText, setRepsText] = useState(set.reps === null ? '' : String(set.reps))
@@ -73,7 +96,7 @@ function EditorBody({
 
   async function save(markDone: boolean) {
     unlockAudio()
-    if (markDone && (reps === null || reps <= 0)) {
+    if ((markDone || historyMode) && (reps === null || reps <= 0)) {
       setError('Indica cuántas repeticiones hiciste.')
       return
     }
@@ -86,7 +109,7 @@ function EditorBody({
       if (markDone && !done) {
         const updated = await setSetCompleted(set.id, true)
         vibrate(15)
-        onCompleted(updated)
+        onCompleted?.(updated)
       }
       onClose()
     } finally {
@@ -95,6 +118,7 @@ function EditorBody({
   }
 
   const previousText = previous ? formatSet(previous.weightKg, previous.reps, unit) : null
+  const plates = barbell ? platesFor(weight, unit) : null
 
   return (
     <div className="flex flex-col gap-5 p-4">
@@ -121,6 +145,22 @@ function EditorBody({
         onPlus={() => bumpWeight(step)}
         placeholder="0"
       />
+      {barbell && weight > 0 && (
+        <p className="-mt-2 flex items-start gap-2 text-sm text-muted-foreground">
+          <Disc3 className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden />
+          {plates === null ? (
+            <span>Menos que la barra vacía ({BAR_WEIGHT[unit]} {unit}).</span>
+          ) : plates.perSide.length === 0 ? (
+            <span>Solo la barra ({BAR_WEIGHT[unit]} {unit}).</span>
+          ) : (
+            <span>
+              Por lado: <strong className="text-foreground">{plates.perSide.map((p) => formatNumber(p)).join(' + ')}</strong>{' '}
+              {unit} (barra de {BAR_WEIGHT[unit]})
+              {plates.remainder > 0 && ` · sobran ${formatNumber(plates.remainder)} ${unit}`}
+            </span>
+          )}
+        </p>
+      )}
       <BigStepper
         label="Repeticiones"
         hint={repsTarget ? `Objetivo: ${repsTarget}` : undefined}
@@ -140,14 +180,25 @@ function EditorBody({
         </p>
       )}
 
-      <div className="grid grid-cols-2 gap-2">
-        <Button variant="secondary" size="lg" onClick={() => save(false)} disabled={saving}>
-          Guardar
-        </Button>
-        <Button size="lg" onClick={() => save(!done)} disabled={saving}>
-          <Check /> {done ? 'Guardar' : 'Hecha'}
-        </Button>
-      </div>
+      {historyMode ? (
+        <div className="grid grid-cols-2 gap-2">
+          <Button variant="secondary" size="lg" className="text-red-400" onClick={() => onDelete(set)} disabled={saving}>
+            <Trash2 /> Borrar
+          </Button>
+          <Button size="lg" onClick={() => save(false)} disabled={saving}>
+            <Check /> Guardar
+          </Button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-2">
+          <Button variant="secondary" size="lg" onClick={() => save(false)} disabled={saving}>
+            Guardar
+          </Button>
+          <Button size="lg" onClick={() => save(!done)} disabled={saving}>
+            <Check /> {done ? 'Guardar' : 'Hecha'}
+          </Button>
+        </div>
+      )}
     </div>
   )
 }

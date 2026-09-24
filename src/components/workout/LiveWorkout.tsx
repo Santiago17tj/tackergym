@@ -24,6 +24,7 @@ export function LiveWorkout({ workout, settings }: LiveWorkoutProps) {
   const now = useNow(1000)
   const [pickerOpen, setPickerOpen] = useState(false)
   const [finishOpen, setFinishOpen] = useState(false)
+  const [notes, setNotes] = useState('')
   const [discardOpen, setDiscardOpen] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -52,7 +53,7 @@ export function LiveWorkout({ workout, settings }: LiveWorkoutProps) {
   async function finish() {
     setBusy(true)
     try {
-      const summary = await finishWorkout(session.id)
+      const summary = await finishWorkout(session.id, notes)
       restTimer.stop()
       navigate('/', { replace: true, state: { summary, name: session.name } })
     } catch (e) {
@@ -173,6 +174,17 @@ export function LiveWorkout({ workout, settings }: LiveWorkoutProps) {
       >
         {completedSets} series completadas en {formatClock(now - session.startedAt)}.
         {pendingSets > 0 && ` Las ${pendingSets} series sin marcar no se guardarán.`}
+        <label className="mt-3 block">
+          <span className="text-sm font-medium text-foreground">Notas (opcional)</span>
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            maxLength={500}
+            rows={3}
+            placeholder="Cómo te sentiste, molestias, qué mejorar…"
+            className="mt-1 w-full rounded-lg border border-input bg-background p-3 text-base text-foreground outline-none placeholder:text-muted-foreground focus-visible:border-ring"
+          />
+        </label>
       </ConfirmDialog>
 
       <ConfirmDialog

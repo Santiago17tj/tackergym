@@ -55,6 +55,12 @@ export default defineConfig({
         background_color: THEME_COLOR,
         theme_color: THEME_COLOR,
         categories: ['health', 'fitness', 'sports'],
+        // Accesos directos al mantener pulsado el icono
+        shortcuts: [
+          { name: 'Entrenar', short_name: 'Entrenar', url: '/', icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }] },
+          { name: 'Historial', short_name: 'Historial', url: '/historial', icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }] },
+          { name: 'Rutinas', short_name: 'Rutinas', url: '/rutinas', icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }] },
+        ],
         icons: [
           { src: 'pwa-64x64.png', sizes: '64x64', type: 'image/png' },
           { src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' },

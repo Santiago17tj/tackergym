@@ -91,6 +91,9 @@ function WorkoutList() {
                     <span className="shrink-0 text-xs text-muted-foreground">{formatDayTime(item.session.startedAt)}</span>
                   </div>
                   <p className="mt-1 truncate text-sm text-muted-foreground">{item.exerciseNames.join(' · ')}</p>
+                  {item.session.notes && (
+                    <p className="mt-1 line-clamp-2 text-sm text-muted-foreground italic">«{item.session.notes}»</p>
+                  )}
                   <p className="tabular mt-2 text-sm">
                     {formatDuration(item.durationMs)} · {item.completedSets} series · {formatWeight(item.volumeKg, unit, 0)}
                   </p>

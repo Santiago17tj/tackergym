@@ -180,6 +180,7 @@ export const ExerciseBlock = memo(function ExerciseBlock({
         previous={last?.sets[sets.findIndex((s) => s.id === editingId)]}
         unit={unit}
         repsTarget={repRange}
+        barbell={exercise?.equipment === 'barbell'}
         onClose={() => setEditingId(null)}
         onCompleted={onCompleted}
       />

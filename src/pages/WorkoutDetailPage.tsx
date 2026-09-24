@@ -1,4 +1,4 @@
-import { ChevronRight, Trash2 } from 'lucide-react'
+import { ChevronRight, Pencil, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import { StatTile } from '@/components/history/StatTile'
@@ -7,10 +7,12 @@ import { PageHeader } from '@/components/layout/PageHeader'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { ConfirmDialog } from '@/components/ui/dialog'
-import { deleteWorkout } from '@/db'
+import { SetEditor } from '@/components/workout/SetEditor'
+import { deleteHistorySet, deleteWorkout, updateWorkoutNotes, type WorkoutDetail, type WorkoutSet } from '@/db'
+import { toast } from '@/features/toast/store'
 import { useWeightUnit, useWorkoutDetail } from '@/hooks/useDb'
 import { formatDayTime, formatDuration } from '@/lib/format'
-import { formatWeight } from '@/lib/units'
+import { formatSet, formatWeight } from '@/lib/units'
 
 export function WorkoutDetailPage() {
   const { id } = useParams()
@@ -18,6 +20,7 @@ export function WorkoutDetailPage() {
   const unit = useWeightUnit()
   const navigate = useNavigate()
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [editing, setEditing] = useState<{ set: WorkoutSet; block: WorkoutDetail['blocks'][number] } | null>(null)
 
   if (detail === undefined) return null
   if (detail === null) {
@@ -41,6 +44,9 @@ export function WorkoutDetailPage() {
           <StatTile label="Volumen" value={formatWeight(detail.volumeKg, unit, 0)} />
         </dl>
 
+        <NotesField key={`${detail.session.id}:${detail.session.notes}`} sessionId={detail.session.id} initial={detail.session.notes} />
+        <p className="-mt-2 text-xs text-muted-foreground">Toca una serie para corregirla.</p>
+
         {detail.blocks.map((block) => (
           <Card key={block.blockId} className="overflow-hidden">
             {block.exercise ? (
@@ -54,28 +60,25 @@ export function WorkoutDetailPage() {
             ) : (
               <h2 className="p-4 pb-2 text-lg font-bold">Ejercicio eliminado</h2>
             )}
-            <table className="w-full text-sm">
-              <thead className="text-xs text-muted-foreground">
-                <tr>
-                  <th className="w-16 py-1 pl-4 text-left font-medium">Serie</th>
-                  <th className="py-1 text-right font-medium">Peso</th>
-                  <th className="py-1 text-right font-medium">Reps</th>
-                  <th className="py-1 pr-4 text-right font-medium">Volumen</th>
-                </tr>
-              </thead>
-              <tbody className="tabular">
-                {block.sets.map((set) => (
-                  <tr key={set.id} className="border-t">
-                    <td className="py-2 pl-4 font-semibold text-muted-foreground">{set.setNumber}</td>
-                    <td className="py-2 text-right font-semibold">{formatWeight(set.weightKg ?? 0, unit)}</td>
-                    <td className="py-2 text-right font-semibold">{set.reps}</td>
-                    <td className="py-2 pr-4 text-right text-muted-foreground">
+            <ul className="divide-y border-t">
+              {block.sets.map((set) => (
+                <li key={set.id}>
+                  <button
+                    type="button"
+                    onClick={() => setEditing({ set, block })}
+                    aria-label={`Corregir serie ${set.setNumber}: ${formatSet(set.weightKg, set.reps, unit)}`}
+                    className="tabular flex min-h-12 w-full items-center gap-3 px-4 py-2 text-left active:bg-accent/50"
+                  >
+                    <span className="w-6 font-display text-lg font-bold text-muted-foreground">{set.setNumber}</span>
+                    <span className="flex-1 font-display text-xl font-bold">{formatSet(set.weightKg, set.reps, unit)}</span>
+                    <span className="text-sm text-muted-foreground">
                       {formatWeight((set.weightKg ?? 0) * (set.reps ?? 0), unit, 0)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </span>
+                    <Pencil className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+                  </button>
+                </li>
+              ))}
+            </ul>
           </Card>
         ))}
 
@@ -83,6 +86,26 @@ export function WorkoutDetailPage() {
           <Trash2 /> Borrar entrenamiento
         </Button>
       </PageContainer>
+
+      <SetEditor
+        exerciseName={editing?.block.exercise?.name ?? 'Ejercicio'}
+        set={editing?.set ?? null}
+        previous={undefined}
+        unit={unit}
+        repsTarget={null}
+        barbell={editing?.block.exercise?.equipment === 'barbell'}
+        onClose={() => setEditing(null)}
+        onDelete={async (set) => {
+          setEditing(null)
+          const result = await deleteHistorySet(set.id)
+          if (result === 'workout') {
+            toast.show('Entrenamiento borrado', { description: 'No le quedaba ninguna serie.' })
+            navigate('/historial', { replace: true })
+          } else {
+            toast.show('Serie borrada')
+          }
+        }}
+      />
 
       <ConfirmDialog
         open={confirmDelete}
@@ -100,5 +123,23 @@ export function WorkoutDetailPage() {
         Se eliminarán sus {detail.completedSets} series y dejarán de contar para tus récords. No se puede deshacer.
       </ConfirmDialog>
     </>
+  )
+}
+
+function NotesField({ sessionId, initial }: { sessionId: string; initial: string }) {
+  const [notes, setNotes] = useState(initial)
+  return (
+    <label className="block">
+      <span className="text-sm font-semibold">Notas</span>
+      <textarea
+        value={notes}
+        onChange={(e) => setNotes(e.target.value)}
+        onBlur={() => notes !== initial && void updateWorkoutNotes(sessionId, notes)}
+        maxLength={500}
+        rows={2}
+        placeholder="Añade cómo te sentiste, molestias, qué mejorar…"
+        className="mt-1 w-full rounded-lg border border-input bg-card p-3 text-base outline-none placeholder:text-muted-foreground focus-visible:border-ring"
+      />
+    </label>
   )
 }

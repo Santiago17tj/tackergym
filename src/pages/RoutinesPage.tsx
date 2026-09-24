@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowUp, ChevronDown, ChevronRight, Copy, ListChecks, MoreVertical, Pencil, Play, Plus, Sparkles, Trash2 } from 'lucide-react'
+import { ArrowDown, ArrowUp, ChevronDown, ChevronRight, Copy, Dumbbell, ListChecks, MoreVertical, Pencil, Play, Plus, Sparkles, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { EmptyState } from '@/components/EmptyState'
@@ -70,6 +70,18 @@ export function RoutinesPage() {
             <span className="block text-sm text-muted-foreground">
               Cuerpo completo, torso/pierna, 5×5, glúteo, en casa, mancuernas…
             </span>
+          </span>
+          <ChevronRight className="size-5 shrink-0 text-muted-foreground" aria-hidden />
+        </button>
+        <button
+          type="button"
+          onClick={() => navigate('/rutinas/ejercicios')}
+          className="-mt-1 flex items-center gap-3 rounded-lg border p-4 text-left active:bg-accent"
+        >
+          <Dumbbell className="size-6 shrink-0 text-muted-foreground" aria-hidden />
+          <span className="min-w-0 flex-1">
+            <span className="block font-semibold">Mis ejercicios</span>
+            <span className="block text-sm text-muted-foreground">Crear, renombrar o borrar ejercicios del catálogo</span>
           </span>
           <ChevronRight className="size-5 shrink-0 text-muted-foreground" aria-hidden />
         </button>

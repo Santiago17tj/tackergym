@@ -116,7 +116,7 @@ export async function startWorkout(options: { routineId?: string } = {}): Promis
 }
 
 /** Termina el entrenamiento: descarta las series no completadas y los ejercicios vacíos. */
-export async function finishWorkout(sessionId: string): Promise<WorkoutSummary> {
+export async function finishWorkout(sessionId: string, notes?: string): Promise<WorkoutSummary> {
   return db.transaction('rw', db.workoutSessions, db.sets, async () => {
     const session = await db.workoutSessions.get(sessionId)
     if (!session || session.status !== 'active') throw new WorkoutError('No hay un entrenamiento activo.')
@@ -144,6 +144,7 @@ export async function finishWorkout(sessionId: string): Promise<WorkoutSummary> 
       status: 'completed',
       endedAt,
       exercises: session.exercises.filter((b) => usedBlocks.has(b.id)),
+      ...(notes !== undefined && { notes: cleanNotes(notes) }),
     })
 
     return {
@@ -275,5 +276,50 @@ export async function setSetCompleted(id: string, completed: boolean): Promise<W
       : { completedAt: null }
     await db.sets.update(id, changes)
     return { ...set, ...changes }
+  })
+}
+
+// ---------------------------------------------------------------------------
+// Corregir entrenamientos ya guardados
+// ---------------------------------------------------------------------------
+
+const MAX_NOTES = 500
+
+function cleanNotes(notes: string): string {
+  return notes.trim().slice(0, MAX_NOTES)
+}
+
+export async function updateWorkoutNotes(sessionId: string, notes: string): Promise<void> {
+  await db.workoutSessions.update(sessionId, { notes: cleanNotes(notes) })
+}
+
+/**
+ * Borra una serie de un entrenamiento guardado: renumera las del mismo
+ * ejercicio, quita el ejercicio si se queda vacío y borra el entrenamiento si
+ * no le queda ninguna serie. Devuelve qué quedó.
+ */
+export async function deleteHistorySet(setId: string): Promise<'set' | 'exercise' | 'workout'> {
+  return db.transaction('rw', db.workoutSessions, db.sets, async () => {
+    const set = await db.sets.get(setId)
+    if (!set) throw new WorkoutError('La serie no existe.')
+    await db.sets.delete(setId)
+
+    const remaining = await getSessionSets(set.sessionId)
+    if (remaining.length === 0) {
+      await db.workoutSessions.delete(set.sessionId)
+      return 'workout'
+    }
+    const sameBlock = remaining.filter((s) => s.sessionExerciseId === set.sessionExerciseId)
+    await db.sets.bulkUpdate(sameBlock.map((s, i) => ({ key: s.id, changes: { setNumber: i + 1 } })))
+    if (sameBlock.length === 0) {
+      const session = await db.workoutSessions.get(set.sessionId)
+      if (session) {
+        await db.workoutSessions.update(set.sessionId, {
+          exercises: session.exercises.filter((b) => b.id !== set.sessionExerciseId),
+        })
+      }
+      return 'exercise'
+    }
+    return 'set'
   })
 }

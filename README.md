@@ -123,6 +123,17 @@ Las claves VAPID se generan solas la primera vez y se guardan en Redis. Opcional
 `POST /api/push/tick` (firmado por QStash o con `CRON_SECRET`). Las suscripciones anuladas por el
 navegador (404/410) se borran automáticamente.
 
+## Herramientas del día a día
+
+- **Calculadora de discos** en ejercicios con barra: al apuntar el peso muestra los discos por lado
+  (barra de 20 kg / 45 lb) y avisa si el peso no cuadra con los discos habituales.
+- **Notas** al finalizar un entrenamiento (visibles y editables en el historial).
+- **Corregir el historial:** toca una serie de un entrenamiento guardado para cambiar peso/reps o
+  borrarla (se renumeran las demás; los récords se recalculan).
+- **Mis ejercicios** (Rutinas → Mis ejercicios): crear, renombrar, cambiar grupo o material y borrar.
+  Un ejercicio con historial se oculta del catálogo pero conserva sus récords.
+- **Accesos directos** del icono de la app: Entrenar, Historial y Rutinas.
+
 ## Personalización
 
 - **Color de acento** en Ajustes: 9 colores predefinidos o uno libre. Si el color elegido no se lee bien
